@@ -180,6 +180,22 @@ int main(void)
     glViewport(0, 0, WIDTH, HEIGHT);
 
     glUseProgram(program);
+    /*
+        const GLfloat g_vertex_buffer_data[] = {
+            /  R, G, B, A, X, Y  *
+            1, 0, 0, 1, 0, 0, 0, 1, 0, 1, width, 0,      0, 0, 1, 1, width, height,
+
+            1, 0, 0, 1, 0, 0, 0, 0, 1, 1, width, height, 1, 1, 1, 1, 0,     height};
+
+        glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data,
+                     GL_STATIC_DRAW);
+
+        mat4 projection_matrix;
+        glm_ortho(0, width, height, 0, 0.0, 100.0, projection_matrix);
+        glUniformMatrix4fv(glGetUniformLocation(program, "u_projection_matrix"), 1,
+       GL_FALSE, &projection_matrix[0][0]);
+    */
+    // glCre
 
     //=======================================
     //          MAIN LOOP
@@ -190,7 +206,7 @@ int main(void)
 
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-            // nk_sdl_handle_event(&event);
+            //    nk_sdl_handle_event(&event);
             switch (event.type) {
                 case SDL_KEYUP:
                     if (event.key.keysym.sym == SDLK_ESCAPE) {
@@ -203,9 +219,49 @@ int main(void)
                     break;
             }
         }
+        /*
+                if (nk_begin(ctx, "Demo", nk_rect(50, 50, 230, 250),
+                             NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE |
+                                 NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE)) {
+                    enum { EASY, HARD };
+                    static int op = EASY;
+                    static int property = 20;
+
+                    nk_layout_row_static(ctx, 30, 80, 1);
+                    if (nk_button_label(ctx, "button"))
+                        printf("button pressed!\n");
+                    nk_layout_row_dynamic(ctx, 30, 2);
+                    if (nk_option_label(ctx, "easy", op == EASY))
+                        op = EASY;
+                    if (nk_option_label(ctx, "hard", op == HARD))
+                        op = HARD;
+                    nk_layout_row_dynamic(ctx, 22, 1);
+                    nk_property_int(ctx, "Compression:", 0, &property, 100, 10, 1);
+
+                    nk_layout_row_dynamic(ctx, 20, 1);
+                    nk_label(ctx, "background:", NK_TEXT_LEFT);
+                    nk_layout_row_dynamic(ctx, 25, 1);
+                    if (nk_combo_begin_color(ctx, nk_rgb_cf(bg),
+                                             nk_vec2(nk_widget_width(ctx), 400))) {
+                        nk_layout_row_dynamic(ctx, 120, 1);
+                        bg = nk_color_picker(ctx, bg, NK_RGBA);
+                        nk_layout_row_dynamic(ctx, 25, 1);
+                        bg.r = nk_propertyf(ctx, "#R:", 0, bg.r, 1.0f, 0.01f, 0.005f);
+                        bg.g = nk_propertyf(ctx, "#G:", 0, bg.g, 1.0f, 0.01f, 0.005f);
+                        bg.b = nk_propertyf(ctx, "#B:", 0, bg.b, 1.0f, 0.01f, 0.005f);
+                        bg.a = nk_propertyf(ctx, "#A:", 0, bg.a, 1.0f, 0.01f, 0.005f);
+                        nk_combo_end(ctx);
+                    }
+                }
+                nk_end(ctx);
+        */
+        // calculator(ctx);
+        // node_editor(ctx);
+        // overview(ctx);
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
+        //  nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
 
         glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, 3);
