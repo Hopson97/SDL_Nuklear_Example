@@ -1,0 +1,22 @@
+# Linux
+/bin
+nukclear_sdl_gl_test
+
+# Windows
+*.dll
+*.exe
+*.sln
+*.vcxproj
+*.filters
+*.user
+*.vs
+.vscode
+Debug/
+Release/
+
+# Misc
+*.zip
+*.temp
+*.srctrlprj
+*.srctrldb
+*.srctrlbm
