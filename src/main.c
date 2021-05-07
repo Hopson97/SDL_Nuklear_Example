@@ -15,7 +15,7 @@
 #define WIDTH 1600
 #define HEIGHT 1600
 
-
+/*
 static const char* vertex_shader =
     "#version 130\n"
     "in vec2 i_position;\n"
@@ -33,8 +33,7 @@ static const char* fragment_shader = "#version 130\n"
                                      "void main() {\n"
                                      "    o_color = v_color;\n"
                                      "}\n";
-
-typedef enum t_attrib_id { attrib_position, attrib_color } t_attrib_id;
+*/
 
 int main(void)
 {
@@ -93,6 +92,8 @@ int main(void)
     //=======================================
     //          OPENGL OBJECT SETUP
     //=======================================
+    GLuint vbo;
+
 /*
     GLuint vs, fs, program;
 
