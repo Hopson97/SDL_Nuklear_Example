@@ -1,19 +1,39 @@
 #define GL_GLEXT_PROTOTYPES
 
-#include <SDL2/SDL.h>
-#include <glad/glad.h>
 #include "GLDebug.h"
+#include <SDL2/SDL.h>
 #include <cglm/include/cglm/cglm.h>
 #include <cglm/include/cglm/mat4.h>
-#include <stdio.h>
+#include <glad/glad.h>
 #include <nuklear/nuklear_def.h>
 #include <nuklear/nuklear_sdl_gl3.h>
+#include <stdio.h>
 
 #define MAX_VERTEX_MEMORY 512 * 1024
 #define MAX_ELEMENT_MEMORY 128 * 1024
 
 #define WIDTH 1600
-#define HEIGHT 1600
+#define HEIGHT 900
+
+char* getFileContent(const char* fileName)
+{
+    char* buffer = NULL;
+    long length;
+    FILE* file = fopen(fileName, "r");
+
+    if (file) {
+        fseek(file, 0, SEEK_END);
+        length = ftell(file);
+        fseek(file, 0, SEEK_SET);
+        buffer = malloc(length);
+        if (buffer) {
+            fread(buffer, 1, length, file);
+        }
+        fclose(file);
+    }
+
+    return buffer;
+}
 
 /*
 static const char* vertex_shader =
@@ -92,91 +112,103 @@ int main(void)
     //=======================================
     //          OPENGL OBJECT SETUP
     //=======================================
-    GLuint vbo;
+    const GLfloat vertices[] = {
 
-/*
-    GLuint vs, fs, program;
+        -0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 0.5f, 0.0f,
+    };
+    GLuint vao = 0;
+    glCreateVertexArrays(1, &vao);
+    glEnableVertexArrayAttrib(vao, 0);
+    glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(vao, 0, 0);
 
-    vs = glCreateShader(GL_VERTEX_SHADER);
-    fs = glCreateShader(GL_FRAGMENT_SHADER);
+    GLuint vbo = 0;
+    glCreateBuffers(1, &vbo);
+    glNamedBufferStorage(vbo, sizeof(GLfloat) * 9, vertices, 0);
+    glVertexArrayVertexBuffer(vao, 0, vbo, 0, 0);
 
-    int length = strlen(vertex_shader);
-    glShaderSource(vs, 1, (const GLchar**)&vertex_shader, &length);
-    glCompileShader(vs);
+    // Load shaders
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    GLuint program = glCreateProgram();
 
-    GLint status;
-    glGetShaderiv(vs, GL_COMPILE_STATUS, &status);
+    char* vertexFile = getFileContent("Data/Shaders/MinVertex.glsl");
+    char* fragmentFile = getFileContent("Data/Shaders/MinFragment.glsl");
+    if (!vertexFile) {
+        fprintf(stderr, "Failed to load vertex file.\n");
+        return -1;
+    }
+    if (!fragmentFile) {
+        fprintf(stderr, "Failed to load vertex file.\n");
+        return -1;
+    }
+    
+
+    int length = strlen(vertexFile);
+    glShaderSource(vertexShader, 1, (const GLchar* const*)&vertexFile, &length);
+    glCompileShader(vertexShader);
+
+    GLint status = 0;
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
     if (status == GL_FALSE) {
         fprintf(stderr, "vertex shader compilation failed\n");
         return 1;
     }
 
-    length = strlen(fragment_shader);
-    glShaderSource(fs, 1, (const GLchar**)&fragment_shader, &length);
-    glCompileShader(fs);
+    length = strlen(fragmentFile);
+    glShaderSource(fragmentShader, 1, (const GLchar* const*)&fragmentFile, &length);
+    glCompileShader(fragmentShader);
 
-    glGetShaderiv(fs, GL_COMPILE_STATUS, &status);
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
     if (status == GL_FALSE) {
         fprintf(stderr, "fragment shader compilation failed\n");
         return 1;
     }
+    free(vertexFile);
+    free(fragmentFile);
 
     program = glCreateProgram();
-    glAttachShader(program, vs);
-    glAttachShader(program, fs);
+    glAttachShader(program, vertexShader);
+    glAttachShader(program, fragmentShader);
+    
 
-    glBindAttribLocation(program, attrib_position, "i_position");
-    glBindAttribLocation(program, attrib_color, "i_color");
+    glBindAttribLocation(program, 0, "inPosition");
     glLinkProgram(program);
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    //glDisable(GL_DEPTH_TEST);
+    glClearColor(0.5, 0.0, 0.0, 0.0);
+    glViewport(0, 0, WIDTH, HEIGHT);
 
     glUseProgram(program);
+    /*
+        const GLfloat g_vertex_buffer_data[] = {
+            /  R, G, B, A, X, Y  *
+            1, 0, 0, 1, 0, 0, 0, 1, 0, 1, width, 0,      0, 0, 1, 1, width, height,
 
-    glDisable(GL_DEPTH_TEST);
-    glClearColor(0.5, 0.0, 0.0, 0.0);
-    glViewport(0, 0, width, height);
+            1, 0, 0, 1, 0, 0, 0, 0, 1, 1, width, height, 1, 1, 1, 1, 0,     height};
 
-    GLuint vao, vbo;
+        glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data,
+                     GL_STATIC_DRAW);
 
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
-    glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-    glEnableVertexAttribArray(attrib_position);
-    glEnableVertexAttribArray(attrib_color);
-
-    glVertexAttribPointer(attrib_color, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 6, 0);
-    glVertexAttribPointer(attrib_position, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 6,
-                          (void*)(4 * sizeof(float)));
-
-    const GLfloat g_vertex_buffer_data[] = {
-        /  R, G, B, A, X, Y  *
-        1, 0, 0, 1, 0, 0, 0, 1, 0, 1, width, 0,      0, 0, 1, 1, width, height,
-
-        1, 0, 0, 1, 0, 0, 0, 0, 1, 1, width, height, 1, 1, 1, 1, 0,     height};
-
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data,
-                 GL_STATIC_DRAW);
-
-    mat4 projection_matrix;
-    glm_ortho(0, width, height, 0, 0.0, 100.0, projection_matrix);
-    glUniformMatrix4fv(glGetUniformLocation(program, "u_projection_matrix"), 1, GL_FALSE,
-                       &projection_matrix[0][0]);
-*/
-    GLuint vao;
-   // glCre
-
+        mat4 projection_matrix;
+        glm_ortho(0, width, height, 0, 0.0, 100.0, projection_matrix);
+        glUniformMatrix4fv(glGetUniformLocation(program, "u_projection_matrix"), 1,
+       GL_FALSE, &projection_matrix[0][0]);
+    */
+    // glCre
 
     //=======================================
     //          MAIN LOOP
     //=======================================
     bool running = true;
     while (running) {
-       // nk_input_begin(ctx);
+        // nk_input_begin(ctx);
 
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-        //    nk_sdl_handle_event(&event);
+            //    nk_sdl_handle_event(&event);
             switch (event.type) {
                 case SDL_KEYUP:
                     if (event.key.keysym.sym == SDLK_ESCAPE) {
@@ -189,52 +221,52 @@ int main(void)
                     break;
             }
         }
-/*
-        if (nk_begin(ctx, "Demo", nk_rect(50, 50, 230, 250),
-                     NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE |
-                         NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE)) {
-            enum { EASY, HARD };
-            static int op = EASY;
-            static int property = 20;
+        /*
+                if (nk_begin(ctx, "Demo", nk_rect(50, 50, 230, 250),
+                             NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE |
+                                 NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE)) {
+                    enum { EASY, HARD };
+                    static int op = EASY;
+                    static int property = 20;
 
-            nk_layout_row_static(ctx, 30, 80, 1);
-            if (nk_button_label(ctx, "button"))
-                printf("button pressed!\n");
-            nk_layout_row_dynamic(ctx, 30, 2);
-            if (nk_option_label(ctx, "easy", op == EASY))
-                op = EASY;
-            if (nk_option_label(ctx, "hard", op == HARD))
-                op = HARD;
-            nk_layout_row_dynamic(ctx, 22, 1);
-            nk_property_int(ctx, "Compression:", 0, &property, 100, 10, 1);
+                    nk_layout_row_static(ctx, 30, 80, 1);
+                    if (nk_button_label(ctx, "button"))
+                        printf("button pressed!\n");
+                    nk_layout_row_dynamic(ctx, 30, 2);
+                    if (nk_option_label(ctx, "easy", op == EASY))
+                        op = EASY;
+                    if (nk_option_label(ctx, "hard", op == HARD))
+                        op = HARD;
+                    nk_layout_row_dynamic(ctx, 22, 1);
+                    nk_property_int(ctx, "Compression:", 0, &property, 100, 10, 1);
 
-            nk_layout_row_dynamic(ctx, 20, 1);
-            nk_label(ctx, "background:", NK_TEXT_LEFT);
-            nk_layout_row_dynamic(ctx, 25, 1);
-            if (nk_combo_begin_color(ctx, nk_rgb_cf(bg),
-                                     nk_vec2(nk_widget_width(ctx), 400))) {
-                nk_layout_row_dynamic(ctx, 120, 1);
-                bg = nk_color_picker(ctx, bg, NK_RGBA);
-                nk_layout_row_dynamic(ctx, 25, 1);
-                bg.r = nk_propertyf(ctx, "#R:", 0, bg.r, 1.0f, 0.01f, 0.005f);
-                bg.g = nk_propertyf(ctx, "#G:", 0, bg.g, 1.0f, 0.01f, 0.005f);
-                bg.b = nk_propertyf(ctx, "#B:", 0, bg.b, 1.0f, 0.01f, 0.005f);
-                bg.a = nk_propertyf(ctx, "#A:", 0, bg.a, 1.0f, 0.01f, 0.005f);
-                nk_combo_end(ctx);
-            }
-        }
-        nk_end(ctx);
-*/
+                    nk_layout_row_dynamic(ctx, 20, 1);
+                    nk_label(ctx, "background:", NK_TEXT_LEFT);
+                    nk_layout_row_dynamic(ctx, 25, 1);
+                    if (nk_combo_begin_color(ctx, nk_rgb_cf(bg),
+                                             nk_vec2(nk_widget_width(ctx), 400))) {
+                        nk_layout_row_dynamic(ctx, 120, 1);
+                        bg = nk_color_picker(ctx, bg, NK_RGBA);
+                        nk_layout_row_dynamic(ctx, 25, 1);
+                        bg.r = nk_propertyf(ctx, "#R:", 0, bg.r, 1.0f, 0.01f, 0.005f);
+                        bg.g = nk_propertyf(ctx, "#G:", 0, bg.g, 1.0f, 0.01f, 0.005f);
+                        bg.b = nk_propertyf(ctx, "#B:", 0, bg.b, 1.0f, 0.01f, 0.005f);
+                        bg.a = nk_propertyf(ctx, "#A:", 0, bg.a, 1.0f, 0.01f, 0.005f);
+                        nk_combo_end(ctx);
+                    }
+                }
+                nk_end(ctx);
+        */
         // calculator(ctx);
         // node_editor(ctx);
-       // overview(ctx);
+        // overview(ctx);
 
-      //  glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-      //  nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
+        //  nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
 
-       // glBindVertexArray(vao);
-       // glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(vao);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
         SDL_GL_SwapWindow(window);
     }
@@ -242,6 +274,9 @@ int main(void)
     //=======================================
     //          CLEAN UP
     //=======================================
+    glDeleteBuffers(1, &vbo);
+    glDeleteVertexArrays(1, &vao);
+    glDeleteProgram(program);
     nk_sdl_shutdown();
     SDL_GL_DeleteContext(context);
     SDL_DestroyWindow(window);

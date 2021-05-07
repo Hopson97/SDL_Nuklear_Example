@@ -1,4 +1,4 @@
-#version 330
+/*#version 330
 
 layout (location = 0) in vec3 inVertexCoord;
 layout (location = 1) in vec2 inTexCoord;
@@ -18,4 +18,13 @@ void main() {
     passTexCoord = inTexCoord;
     passFragPosition = vec3(modelMatrix * vec4(inVertexCoord, 1.0));
     passNormal = mat3(modelMatrix) * inNormal;
+}*/
+
+#version 450 core
+
+layout(location = 0) in vec3 inPosition;
+
+void main()
+{
+    gl_Position = vec4(inPosition, 1.0);
 }

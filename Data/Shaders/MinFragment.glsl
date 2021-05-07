@@ -1,4 +1,4 @@
-#version 330
+/*#version 330
 
 in vec2 passTexCoord;
 in vec3 passFragPosition;
@@ -15,4 +15,13 @@ void main() {
     float diff = max(dot(normal, lightDirection), 0.0);
 
     outColour = texture(tex, passTexCoord) * vec4(diff, diff, diff, 1.0);
+}
+*/
+#version 450 core
+
+out vec4 outColour;
+
+void main()
+{
+    outColour = vec4(0.0, 1.0,1.0, 1.0);
 }
