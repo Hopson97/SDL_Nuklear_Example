@@ -12,6 +12,10 @@
 #define MAX_VERTEX_MEMORY 512 * 1024
 #define MAX_ELEMENT_MEMORY 128 * 1024
 
+#define WIDTH 1600
+#define HEIGHT 1600
+
+
 static const char* vertex_shader =
     "#version 130\n"
     "in vec2 i_position;\n"
@@ -42,8 +46,8 @@ int main(void)
     // Set up SDL to work with OpenGL (https://wiki.libsdl.org/SDL_GLattr)
     // Enable hardware acceleration
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
     // Set rendering parmeters
@@ -52,18 +56,16 @@ int main(void)
     SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-
-
-    static const int width = 1600;
-    static const int height = 900;
-
+    // Create the window and OpenGL context
     SDL_Window* window =
-        SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width,
-                         height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+        SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH,
+                         HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
     SDL_GLContext context = SDL_GL_CreateContext(window);
 
+    // Init OpenGL functions
     if (!gladLoadGL()) {
         printf("Error: Could not load OpenGL.");
         SDL_GL_DeleteContext(context);
@@ -73,9 +75,9 @@ int main(void)
     }
     initGLDebug();
 
-    ///
-    ///     NUKLEAR SET UP STUFF
-    ///
+    //=======================================
+    //          NUKLEAR SET UP SECTION
+    //=======================================
     struct nk_context* ctx;
     // set_style(ctx, THEME_WHITE);
     ctx = nk_sdl_init(window);
@@ -87,6 +89,10 @@ int main(void)
          * "../../../extra_font/DroidSans.ttf", 14, 0);*/
         nk_sdl_font_stash_end();
     }
+
+    //=======================================
+    //          OPENGL OBJECT SETUP
+    //=======================================
 /*
     GLuint vs, fs, program;
 
@@ -159,6 +165,10 @@ int main(void)
     GLuint vao;
    // glCre
 
+
+    //=======================================
+    //          MAIN LOOP
+    //=======================================
     bool running = true;
     while (running) {
        // nk_input_begin(ctx);
@@ -228,6 +238,9 @@ int main(void)
         SDL_GL_SwapWindow(window);
     }
 
+    //=======================================
+    //          CLEAN UP
+    //=======================================
     nk_sdl_shutdown();
     SDL_GL_DeleteContext(context);
     SDL_DestroyWindow(window);
