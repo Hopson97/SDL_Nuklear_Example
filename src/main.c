@@ -2,12 +2,10 @@
 
 #include "GLDebug.h"
 #include <SDL2/SDL.h>
-#include <cglm/include/cglm/cglm.h>
-#include <cglm/include/cglm/mat4.h>
 #include <glad/glad.h>
 #include <nuklear/nuklear_def.h>
 #include <nuklear/nuklear_sdl_gl3.h>
-#include <stdio.h>
+#include <stdbool.h>
 
 #define MAX_VERTEX_MEMORY 512 * 1024
 #define MAX_ELEMENT_MEMORY 128 * 1024
@@ -15,7 +13,7 @@
 #define WIDTH 1600
 #define HEIGHT 900
 
-char* getFileContent(const char* fileName)
+static char* getFileContent(const char* fileName)
 {
     char* buffer = NULL;
     long length;
@@ -35,25 +33,78 @@ char* getFileContent(const char* fileName)
     return buffer;
 }
 
-/*
-static const char* vertex_shader =
-    "#version 130\n"
-    "in vec2 i_position;\n"
-    "in vec4 i_color;\n"
-    "out vec4 v_color;\n"
-    "uniform mat4 u_projection_matrix;\n"
-    "void main() {\n"
-    "    v_color = i_color;\n"
-    "    gl_Position = u_projection_matrix * vec4( i_position, 0.0, 1.0 );\n"
-    "}\n";
+static char* getShaderString(GLenum shaderType)
+{
+    if (shaderType == GL_VERTEX_SHADER) {
+        return "Vertex Shader";
+    }
+    else if (shaderType == GL_FRAGMENT_SHADER) {
+        return "Fragment Shader";
+    }
+    else {
+        return "Unknown shader";
+    }
+}
 
-static const char* fragment_shader = "#version 130\n"
-                                     "in vec4 v_color;\n"
-                                     "out vec4 o_color;\n"
-                                     "void main() {\n"
-                                     "    o_color = v_color;\n"
-                                     "}\n";
-*/
+static bool compileShader(GLuint* shaderOut, const char* fileName, GLenum shaderType)
+{
+    char* source = getFileContent(fileName);
+    if (!source) {
+        fprintf(stderr, "Failed to load %s file.\n", getShaderString(shaderType));
+        return false;
+    }
+    GLuint shader = glCreateShader(shaderType);
+
+    int length = strlen(source);
+    glShaderSource(shader, 1, (const GLchar* const*)&source, &length);
+    glCompileShader(shader);
+
+    GLint status = 0;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    if (status == GL_FALSE) {
+        char buff[1024];
+        glGetShaderInfoLog(shader, 1024, NULL, buff);
+        fprintf(stderr, "%s compilation failed: %s\n", getShaderString(shaderType), buff);
+        free(source);
+        return false;
+    }
+    *shaderOut = shader;
+    free(source);
+    return true;
+}
+
+static GLuint loadShaders(const char* vertexFilename, const char* fragmentFileName)
+{
+    GLuint vertexShader;
+    GLuint fragmentShader;
+
+    if (!compileShader(&vertexShader, vertexFilename, GL_VERTEX_SHADER)) {
+        exit(1);
+    }
+
+    if (!compileShader(&fragmentShader, fragmentFileName, GL_FRAGMENT_SHADER)) {
+        exit(1);
+    }
+
+    GLuint program = glCreateProgram();
+    glAttachShader(program, vertexShader);
+    glAttachShader(program, fragmentShader);
+    glLinkProgram(program);
+
+    glBindAttribLocation(program, 0, "inPosition");
+
+    GLint status;
+    glGetProgramiv(program, GL_LINK_STATUS, &status);
+    if (status == GL_FALSE) {
+        char buff[1024];
+        glGetShaderInfoLog(program, 1024, NULL, buff);
+        fprintf(stderr, "Failed to link shader programs: %s\n", buff);
+        exit(1);
+    }
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    return program;
+}
 
 int main(void)
 {
@@ -101,96 +152,70 @@ int main(void)
     // set_style(ctx, THEME_WHITE);
     ctx = nk_sdl_init(window);
     {
-        // Example of font loading, pretty nice!
         struct nk_font_atlas* atlas;
         nk_sdl_font_stash_begin(&atlas);
         /*struct nk_font *droid = nk_font_atlas_add_from_file(atlas,
          * "../../../extra_font/DroidSans.ttf", 14, 0);*/
         nk_sdl_font_stash_end();
     }
+    nk_set_style(ctx, THEME_WHITE);
 
     //=======================================
     //          OPENGL OBJECT SETUP
     //=======================================
+    // clang-format off
     const GLfloat vertices[] = {
 
-        -0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 0.5f, 0.0f,
+        -0.5f, -0.5f, 0.0f, 
+         0.5f, -0.5f, 0.0f, 
+         0.0f,  0.5f, 0.0f,
     };
+    // clang-format on
+
+    // Create triangle VAO
     GLuint vao = 0;
+    GLuint vbo = 0;
+    /*
     glCreateVertexArrays(1, &vao);
     glEnableVertexArrayAttrib(vao, 0);
     glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
     glVertexArrayAttribBinding(vao, 0, 0);
 
-    GLuint vbo = 0;
+    // Create VBO, attatch it to the VBO
     glCreateBuffers(1, &vbo);
     glNamedBufferStorage(vbo, sizeof(GLfloat) * 9, vertices, 0);
     glVertexArrayVertexBuffer(vao, 0, vbo, 0, 0);
+*/
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9, vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+    glEnableVertexAttribArray(0);
 
     // Load shaders
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    GLuint program = glCreateProgram();
-
-    char* vertexFile = getFileContent("Data/Shaders/MinVertex.glsl");
-    char* fragmentFile = getFileContent("Data/Shaders/MinFragment.glsl");
-    if (!vertexFile) {
-        fprintf(stderr, "Failed to load vertex file.\n");
-        return -1;
-    }
-    if (!fragmentFile) {
-        fprintf(stderr, "Failed to load vertex file.\n");
-        return -1;
-    }
-
-    int length = strlen(vertexFile);
-    glShaderSource(vertexShader, 1, (const GLchar* const*)&vertexFile, &length);
-    glCompileShader(vertexShader);
-
-    GLint status = 0;
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
-    if (status == GL_FALSE) {
-        fprintf(stderr, "vertex shader compilation failed\n");
-        return 1;
-    }
-
-    length = strlen(fragmentFile);
-    glShaderSource(fragmentShader, 1, (const GLchar* const*)&fragmentFile, &length);
-    glCompileShader(fragmentShader);
-
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
-    if (status == GL_FALSE) {
-        fprintf(stderr, "fragment shader compilation failed\n");
-        return 1;
-    }
-    free(vertexFile);
-    free(fragmentFile);
-
-    program = glCreateProgram();
-    glAttachShader(program, vertexShader);
-    glAttachShader(program, fragmentShader);
-
-    glBindAttribLocation(program, 0, "inPosition");
-    glLinkProgram(program);
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    // glDisable(GL_DEPTH_TEST);
-    glClearColor(0.5, 0.0, 0.0, 0.0);
-    glViewport(0, 0, WIDTH, HEIGHT);
-
+    GLuint program =
+        loadShaders("Data/Shaders/MinVertex.glsl", "Data/Shaders/MinFragment.glsl");
     glUseProgram(program);
+
+    //=======================================
+    //          OPENGL MISC SETUP
+    //=======================================
+    // glDisable(GL_DEPTH_TEST);
+    glClearColor(0.5, 0.5, 0.5, 0.0);
+    glViewport(0, 0, WIDTH, HEIGHT);
 
     //=======================================
     //          MAIN LOOP
     //=======================================
     bool running = true;
     while (running) {
-        // nk_input_begin(ctx);
-
+        nk_input_begin(ctx);
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-            // nk_sdl_handle_event(&event);
+            nk_sdl_handle_event(&event);
             switch (event.type) {
                 case SDL_KEYUP:
                     if (event.key.keysym.sym == SDLK_ESCAPE) {
@@ -204,8 +229,8 @@ int main(void)
             }
         }
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
+        nk_overview(ctx);
+        nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
 
         glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, 3);

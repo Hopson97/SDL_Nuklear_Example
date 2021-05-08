@@ -8,7 +8,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-int overview(struct nk_context* ctx)
+#include "nuklear_sdl_gl3.h"
+
+int nk_overview(struct nk_context* ctx)
 {
     /* window flags */
     static int show_menu = nk_true;
@@ -1586,7 +1588,7 @@ static void node_editor_init(struct node_editor* editor)
     editor->show_grid = nk_true;
 }
 
-int node_editor(struct nk_context* ctx)
+int nk_node_editor(struct nk_context* ctx)
 {
     int n = 0;
     struct nk_rect total_space;
@@ -1805,9 +1807,8 @@ int node_editor(struct nk_context* ctx)
 }
 
 
-enum theme { THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK };
 
-void set_style(struct nk_context* ctx, enum theme theme)
+void nk_set_style(struct nk_context* ctx, enum nk_theme theme)
 {
     struct nk_color table[NK_COLOR_COUNT];
     if (theme == THEME_WHITE) {
@@ -1941,7 +1942,7 @@ void set_style(struct nk_context* ctx, enum theme theme)
 
 
 
-void calculator(struct nk_context* ctx)
+void nk_calculator(struct nk_context* ctx)
 {
     if (nk_begin(ctx, "Calculator", nk_rect(10, 10, 180, 250),
                  NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_MOVABLE)) {

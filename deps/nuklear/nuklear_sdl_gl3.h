@@ -18,8 +18,8 @@ NK_API void                 nk_sdl_device_destroy(void);
 NK_API void                 nk_sdl_device_create(void);
 
 // demo stuff
-enum theme { THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK };
-int overview(struct nk_context* ctx);
-int node_editor(struct nk_context* ctx);
-void calculator(struct nk_context* ctx);
-void set_style(struct nk_context* ctx, enum theme theme);
+enum nk_theme { THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK };
+int nk_overview(struct nk_context* ctx);
+int nk_node_editor(struct nk_context* ctx);
+void nk_calculator(struct nk_context* ctx);
+void nk_set_style(struct nk_context* ctx, enum nk_theme theme);
