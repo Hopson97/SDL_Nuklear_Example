@@ -9,7 +9,8 @@ project(
 #Set executable
 add_executable(${PROJECT_NAME}     
     src/main.c
-    src/GLDebug.c
+    src/Graphics/GLDebug.c
+    src/Graphics/Shader.c
 )
 
 #Set C11

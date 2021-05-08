@@ -1,6 +1,7 @@
 #define GL_GLEXT_PROTOTYPES
 
-#include "GLDebug.h"
+#include "Graphics/GLDebug.h"
+#include "Graphics/Shader.h"
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
 #include <nuklear/nuklear_def.h>
@@ -12,99 +13,6 @@
 
 #define WIDTH 1600
 #define HEIGHT 900
-
-static char* getFileContent(const char* fileName)
-{
-    char* buffer = NULL;
-    long length;
-    FILE* file = fopen(fileName, "r");
-
-    if (file) {
-        fseek(file, 0, SEEK_END);
-        length = ftell(file);
-        fseek(file, 0, SEEK_SET);
-        buffer = malloc(length);
-        if (buffer) {
-            fread(buffer, 1, length, file);
-        }
-        fclose(file);
-    }
-
-    return buffer;
-}
-
-static char* getShaderString(GLenum shaderType)
-{
-    if (shaderType == GL_VERTEX_SHADER) {
-        return "Vertex Shader";
-    }
-    else if (shaderType == GL_FRAGMENT_SHADER) {
-        return "Fragment Shader";
-    }
-    else {
-        return "Unknown shader";
-    }
-}
-
-static bool compileShader(GLuint* shaderOut, const char* fileName, GLenum shaderType)
-{
-    char* source = getFileContent(fileName);
-    if (!source) {
-        fprintf(stderr, "Failed to load %s file.\n", getShaderString(shaderType));
-        return false;
-    }
-    GLuint shader = glCreateShader(shaderType);
-
-    int length = strlen(source);
-    glShaderSource(shader, 1, (const GLchar* const*)&source, &length);
-    glCompileShader(shader);
-
-    GLint status = 0;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-    if (status == GL_FALSE) {
-        char buff[1024];
-        glGetShaderInfoLog(shader, 1024, NULL, buff);
-        fprintf(stderr, "%s compilation failed: %s\n", getShaderString(shaderType), buff);
-        free(source);
-        return false;
-    }
-    *shaderOut = shader;
-    free(source);
-    return true;
-}
-
-static GLuint loadShaders(const char* vertexFilename, const char* fragmentFileName)
-{
-    GLuint vertexShader;
-    GLuint fragmentShader;
-
-    if (!compileShader(&vertexShader, vertexFilename, GL_VERTEX_SHADER)) {
-        exit(1);
-    }
-
-    if (!compileShader(&fragmentShader, fragmentFileName, GL_FRAGMENT_SHADER)) {
-        exit(1);
-    }
-
-    GLuint program = glCreateProgram();
-    glAttachShader(program, vertexShader);
-    glAttachShader(program, fragmentShader);
-    glLinkProgram(program);
-
-    glBindAttribLocation(program, 0, "inPosition");
-
-    GLint status;
-    glGetProgramiv(program, GL_LINK_STATUS, &status);
-    if (status == GL_FALSE) {
-        char buff[1024];
-        glGetShaderInfoLog(program, 1024, NULL, buff);
-        fprintf(stderr, "Failed to link shader programs: %s\n", buff);
-        exit(1);
-    }
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-    return program;
-}
 
 int main(void)
 {
@@ -175,7 +83,7 @@ int main(void)
     // Create triangle VAO
     GLuint vao = 0;
     GLuint vbo = 0;
-    
+
     glCreateVertexArrays(1, &vao);
     glEnableVertexArrayAttrib(vao, 0);
     glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
