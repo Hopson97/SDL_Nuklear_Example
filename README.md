@@ -1,22 +1,22 @@
-# nukclear_sdl_gl_test
+# Nuklear SDL2 Example
 
-description here
+Example of using SDL2 with Nuklear + OpenGL.
+
+https://github.com/vurtun/nuklear
 
 ## Building and Running
 
 ### Libraries
 
-SFML is required.
+SDL2 is required.
 
 These can be installed from your project manager. For example, on Debian/ Ubuntu:
 
 ```sh
-sudo apt install libsfml-dev
+sudo apt install libsdl2-dev
 ```
 
-If this is not possible (eg windows), you can install these manually from their respective websites:
-
-https://www.sfml-dev.org/download.php
+If this is not possible (eg windows), you can install these manually from their respective website.
 
 ### Linux
 

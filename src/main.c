@@ -38,9 +38,11 @@ int main(void)
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
     // Create the window and OpenGL context
-    SDL_Window* window =
-        SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH,
-                         HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    
+    SDL_Window* window = SDL_CreateWindow(
+        "OpenGL Nuklear Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH,
+        HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+        
     SDL_GLContext context = SDL_GL_CreateContext(window);
 
     // Init OpenGL functions
@@ -76,13 +78,19 @@ int main(void)
 
         -0.5f, -0.5f, 0.0f, 
          0.5f, -0.5f, 0.0f, 
-         0.0f,  0.5f, 0.0f,
+         0.5f,  0.5f, 0.0f, 
+        -0.5f,  0.5f, 0.0f,
+    };
+
+    const GLuint indices[]  = {
+        0, 1, 2, 2, 3, 0
     };
     // clang-format on
 
     // Create triangle VAO
     GLuint vao = 0;
     GLuint vbo = 0;
+    GLuint ebo = 0;
 
     glCreateVertexArrays(1, &vao);
     glEnableVertexArrayAttrib(vao, 0);
@@ -91,8 +99,13 @@ int main(void)
 
     // Create VBO, attatch it to the VAO
     glCreateBuffers(1, &vbo);
-    glNamedBufferStorage(vbo, sizeof(GLfloat) * 9, vertices, GL_DYNAMIC_STORAGE_BIT);
+    glNamedBufferStorage(vbo, sizeof(GLfloat) * 12, vertices, GL_DYNAMIC_STORAGE_BIT);
     glVertexArrayVertexBuffer(vao, 0, vbo, 0, 3 * sizeof(GLfloat));
+
+    // Create EBO, attatch to the VAO
+    glCreateBuffers(1, &ebo);
+    glNamedBufferStorage(ebo, sizeof(GLuint) * 6, indices, GL_DYNAMIC_STORAGE_BIT);
+    glVertexArrayElementBuffer(vao, ebo);
 
     // Load shaders
     GLuint program =
@@ -132,7 +145,7 @@ int main(void)
 
         glBindVertexArray(vao);
         glUseProgram(program);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
 
@@ -143,6 +156,7 @@ int main(void)
     //          CLEAN UP
     //=======================================
     glDeleteBuffers(1, &vbo);
+    glDeleteBuffers(1, &ebo);
     glDeleteVertexArrays(1, &vao);
     glDeleteProgram(program);
     nk_sdl_shutdown();

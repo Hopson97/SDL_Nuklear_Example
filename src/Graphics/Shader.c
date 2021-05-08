@@ -96,3 +96,9 @@ GLuint loadShaders(const char* vertexFilename, const char* fragmentFileName)
     glDeleteShader(fragmentShader);
     return program;
 }
+
+void shaderLoadUniformMatrix4(Shader* shader, const char* name, const mat4 matrix)
+{
+    GLuint location = glGetUniformLocation(shader->program, name);
+    glUniformMatrix4fv(location, 1, GL_FALSE, (float*)matrix);
+}
