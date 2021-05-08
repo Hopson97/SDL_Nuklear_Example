@@ -129,11 +129,12 @@ int main(void)
         }
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         nk_overview(ctx);
-        nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
 
         glBindVertexArray(vao);
         glUseProgram(program);
         glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
 
         SDL_GL_SwapWindow(window);
     }
