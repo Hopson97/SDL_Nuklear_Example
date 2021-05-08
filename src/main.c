@@ -175,25 +175,16 @@ int main(void)
     // Create triangle VAO
     GLuint vao = 0;
     GLuint vbo = 0;
-    /*
+    
     glCreateVertexArrays(1, &vao);
     glEnableVertexArrayAttrib(vao, 0);
     glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
     glVertexArrayAttribBinding(vao, 0, 0);
 
-    // Create VBO, attatch it to the VBO
+    // Create VBO, attatch it to the VAO
     glCreateBuffers(1, &vbo);
-    glNamedBufferStorage(vbo, sizeof(GLfloat) * 9, vertices, 0);
-    glVertexArrayVertexBuffer(vao, 0, vbo, 0, 0);
-*/
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9, vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
-    glEnableVertexAttribArray(0);
+    glNamedBufferStorage(vbo, sizeof(GLfloat) * 9, vertices, GL_DYNAMIC_STORAGE_BIT);
+    glVertexArrayVertexBuffer(vao, 0, vbo, 0, 3 * sizeof(GLfloat));
 
     // Load shaders
     GLuint program =
@@ -233,6 +224,7 @@ int main(void)
         nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
 
         glBindVertexArray(vao);
+        glUseProgram(program);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
         SDL_GL_SwapWindow(window);
