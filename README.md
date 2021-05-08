@@ -2,7 +2,7 @@
 
 Example of using SDL2 with Nuklear + OpenGL.
 
-https://github.com/vurtun/nuklear
+https://github.com/Immediate-Mode-UI/Nuklear
 
 ## Building and Running
 
