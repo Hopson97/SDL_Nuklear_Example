@@ -8,6 +8,7 @@
 #include <stb/stb_image.h>
 #include <stdbool.h>
 
+#include <cglm/struct.h>
 #include <cglm/cam.h>
 
 #define MAX_VERTEX_MEMORY 512 * 1024
@@ -149,17 +150,18 @@ int main(void)
     //=======================================
     //          WOW LETS MAKE IT 3D
     //=======================================
-    mat4 projection = GLM_MAT4_IDENTITY_INIT;
     float aspect = (float)WIDTH / (float)HEIGHT;
-    glm_perspective(glm_rad(90.0f), aspect, 0.1f, 100.0f, projection);
+    mat4s projection = glms_perspective(glm_rad(90.0f), aspect, 0.1f, 100.0f);
 
     // Camera stuff 
-    vec3 playerPosition = {0.0f};
-    vec3 playerRotation = {0.0f};
-    vec3 up = {0.0f, 1.0f, 0.0f};
-    vec3 front = {0.0f, 0.0f, -1};
+    vec3s playerPosition = GLMS_VEC3_ZERO_INIT;
+    vec3s playerRotation = GLMS_VEC3_ZERO_INIT;
+    vec3s up = GLMS_YUP;
+    vec3s front = GLMS_VEC3_ZERO_INIT;
+    front.z = -1.0f;
 
-    vec3 modelLocation = {0.0f, 0.0f, -10.1f};
+    vec3s modelLocation = GLMS_VEC3_ZERO_INIT;
+    modelLocation.z = -10.0f;
 
     //=======================================
     //          MAIN LOOP
@@ -191,7 +193,7 @@ int main(void)
         // https://wiki.libsdl.org/SDL_Scancode
         keyboard = SDL_GetKeyboardState(NULL);
         if (keyboard[SDL_SCANCODE_W]) {
-            printf("W was pressed\n");
+            playerPosition.z -= 0.5;
             fflush(stdout);
         }
 
@@ -206,22 +208,19 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // transform
-        mat4 modelMatrix = GLM_MAT4_IDENTITY_INIT;
-        glm_translate(modelMatrix, modelLocation);
+        mat4s modelMatrix = GLMS_MAT4_IDENTITY_INIT;
+        modelMatrix = glms_translate(modelMatrix, modelLocation);
 
         // glm_rotate_x(modelMatrix, 0.0f, modelMatrix);
         // glm_rotate_y(modelMatrix, 0.0f, modelMatrix);
         // glm_rotate_z(modelMatrix, 0.0f, modelMatrix);
 
         // View Matrix
-        mat4 viewMatrix = GLM_MAT4_IDENTITY_INIT;
-        vec3 center = {0};
-        glm_vec3_add(playerPosition, front, center);
-        glm_lookat(playerPosition, center, up, viewMatrix);
+        vec3s center =  glms_vec3_add(playerPosition, front);
+        mat4s viewMatrix = glms_lookat(playerPosition, center, up);
 
         // Calculate projection view matrix and then upload
-        mat4 projectionViewMatrix = GLM_MAT4_IDENTITY_INIT;
-        glm_mat4_mul(projection, viewMatrix, projectionViewMatrix);
+        mat4s projectionViewMatrix = glms_mat4_mul(projection, viewMatrix);
 
         glUseProgram(shader);
         loadMatrix4ToShader(shader, "projectionViewMatrix", projectionViewMatrix);
