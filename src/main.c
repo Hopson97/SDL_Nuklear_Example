@@ -6,6 +6,7 @@
 #include <nuklear/nuklear_sdl_gl3.h>
 #include <stdbool.h>
 #include <stb/stb_image.h>
+#include "Graphics/Texture.h"
 
 #define MAX_VERTEX_MEMORY 512 * 1024
 #define MAX_ELEMENT_MEMORY 128 * 1024
@@ -134,20 +135,7 @@ int main(void)
     //  
     // Load up a texture
     //
-    int width;
-    int height;
-    int channels;
-    unsigned char* imageData = stbi_load("Data/Textures/opengl_logo.png", &width, &height, &channels, STBI_rgb_alpha);
-    
-    GLuint texture;
-    glCreateTextures(GL_TEXTURE_2D, 1, &texture);
-    glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-    glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-    glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureStorage2D(texture, 1, GL_RGBA8, width, height);
-    glTextureSubImage2D(texture, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
-    stbi_image_free(imageData);
+    Texture2D texture = load2DTexture("Data/Textures/opengl_logo.png");
 
     //=======================================
     //          OPENGL MISC SETUP
@@ -183,7 +171,7 @@ int main(void)
 
         glBindVertexArray(vao);
         glUseProgram(program);
-        glBindTextureUnit(0, texture);
+        glBindTextureUnit(0, texture.id);
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
