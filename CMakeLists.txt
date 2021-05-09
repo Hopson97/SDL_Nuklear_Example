@@ -12,7 +12,6 @@ add_executable(${PROJECT_NAME}
     src/Maths.c
     src/Graphics/GLDebug.c
     src/Graphics/Shader.c
-    src/Graphics/Texture.c
 )
 
 #Set C11
@@ -32,10 +31,7 @@ find_package(SDL2 REQUIRED)
 add_subdirectory(deps/glad)
 add_subdirectory(deps/cglm)
 add_subdirectory(deps/nuklear)
-
-add_library(stb
-    deps/stb/stb_impl.c
-)
+add_subdirectory(deps/stb)
 
 target_include_directories(
     ${PROJECT_NAME}

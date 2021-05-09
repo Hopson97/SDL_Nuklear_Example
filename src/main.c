@@ -1,6 +1,5 @@
 #include "Graphics/GLDebug.h"
 #include "Graphics/Shader.h"
-#include "Graphics/Texture.h"
 #include "Maths.h"
 #include <SDL2/SDL.h>
 #include <cglm/cam.h>
@@ -40,8 +39,6 @@ int main(void)
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-    
-
     // Create the window and OpenGL context
 
     SDL_Window* window = SDL_CreateWindow(
@@ -49,7 +46,6 @@ int main(void)
         HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 
     SDL_GLContext context = SDL_GL_CreateContext(window);
-SDL_SetRelativeMouseMode(SDL_TRUE);
     // Init OpenGL functions
     if (!gladLoadGL()) {
         printf("Error: Could not load OpenGL.");
@@ -140,7 +136,23 @@ SDL_SetRelativeMouseMode(SDL_TRUE);
     //
     // Load up a texture
     //
-    struct Texture2D texture = load2DTexture("Data/Textures/opengl_logo.png");
+
+    int width;
+    int height;
+    int channels;
+    unsigned char* imageData = stbi_load("Data/Textures/opengl_logo.png", &width, &height,
+                                         &channels, STBI_rgb_alpha);
+
+    GLuint texture;
+    glCreateTextures(GL_TEXTURE_2D, 1, &texture);
+    glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureStorage2D(texture, 1, GL_RGBA8, width, height);
+    glTextureSubImage2D(texture, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE,
+                        imageData);
+    stbi_image_free(imageData);
 
     //=======================================
     //          OPENGL MISC SETUP
@@ -202,8 +214,18 @@ SDL_SetRelativeMouseMode(SDL_TRUE);
         // https://wiki.libsdl.org/SDL_Scancode
         keyboard = SDL_GetKeyboardState(NULL);
         if (keyboard[SDL_SCANCODE_W]) {
-            playerPosition[2] -= 0.5;
+            moveVectorForwards(playerPosition, playerRotation, 1);
         }
+        if (keyboard[SDL_SCANCODE_A]) {
+            moveVectorLeft(playerPosition, playerRotation, 1);
+        }
+        if (keyboard[SDL_SCANCODE_S]) {
+            moveVectorBackwards(playerPosition, playerRotation, 1);
+        }
+        if (keyboard[SDL_SCANCODE_D]) {
+            moveVectorRight(playerPosition, playerRotation, 1);
+        }
+        //  SDL_SetRelativeMouseMode(SDL_TRUE);
 
         // Mouse input
         int thisMouseX;
@@ -212,29 +234,32 @@ SDL_SetRelativeMouseMode(SDL_TRUE);
 
         int mouseXDiff = thisMouseX - lastMouseX;
         int mouseYDiff = thisMouseY - lastMouseY;
-        
+
         playerRotation[0] += mouseYDiff / 4.0f;
         playerRotation[1] += mouseXDiff / 4.0f;
 
-
-        SDL_WarpMouseInWindow(window, WIDTH / 2, HEIGHT / 2);
-
-        SDL_WarpMouseInWindow(window, WIDTH / 2, HEIGHT / 2);
         SDL_GetMouseState(&lastMouseX, &lastMouseY);
 
+        // SDL_WarpMouseInWindow(window, WIDTH / 2, HEIGHT / 2);
+        // SDL_SetRelativeMouseMode(SDL_FALSE);
+
         // Update
-        modelRotation[0] += 0.5;
-        modelRotation[1] += 0.1;
-        modelRotation[2] += 0.1;
 
         // GUI
         if (nk_begin(ctx, "Debug Window", nk_rect(0, 0, 400, 200), 0)) {
             nk_layout_row_dynamic(ctx, 25, 1);
-            nk_labelf(ctx, NK_STATIC, "Player Position: (%f %f %f)", playerPosition[0], playerPosition[1], playerPosition[2]);
+            nk_labelf(ctx, NK_STATIC, "Player Position: (%f %f %f)", playerPosition[0],
+                      playerPosition[1], playerPosition[2]);
             nk_layout_row_dynamic(ctx, 25, 1);
-            nk_labelf(ctx, NK_STATIC, "Player Rotation: (%f %f %f)", playerRotation[0], playerRotation[1], playerRotation[2]);
-                        nk_layout_row_dynamic(ctx, 25, 1);
-            nk_labelf(ctx, NK_STATIC, "Player Front: (%f %f %f)", front[0], front[1], front[2]);
+            nk_labelf(ctx, NK_STATIC, "Player Rotation: (%f %f %f)", playerRotation[0],
+                      playerRotation[1], playerRotation[2]);
+            nk_layout_row_dynamic(ctx, 25, 1);
+            nk_labelf(ctx, NK_STATIC, "Player Front: (%f %f %f)", front[0], front[1],
+                      front[2]);
+
+            nk_layout_row_dynamic(ctx, 25, 1);
+            nk_labelf(ctx, NK_STATIC, "Mouse Position: (%d %d)", lastMouseX, lastMouseY,
+                      front[2]);
         }
         nk_end(ctx);
 
@@ -249,8 +274,6 @@ SDL_SetRelativeMouseMode(SDL_TRUE);
 
         // View Matrix
         Vector3 center;
-
-
 
         front[0] = cos(glm_rad(playerRotation[1])) * cos(glm_rad(playerRotation[0]));
         front[1] = sin(glm_rad(playerRotation[0]));
@@ -271,7 +294,7 @@ SDL_SetRelativeMouseMode(SDL_TRUE);
 
         // Bind stuff then render
         glBindVertexArray(vao);
-        glBindTextureUnit(0, texture.id);
+        glBindTextureUnit(0, texture);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);

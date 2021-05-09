@@ -1,8 +1,8 @@
 #pragma once
 
+#include "../Maths.h"
 #include <glad/glad.h>
 #include <stdbool.h>
-#include "../Maths.h"
 
 GLuint loadShaders(const char* vertexFilename, const char* fragmentFileName);
 

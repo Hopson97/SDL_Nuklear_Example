@@ -29,18 +29,19 @@ fi
 
 # Creates the folder for the binaries
 mkdir -p nukclear_sdl_gl_test 
+mkdir -p nukclear_sdl_gl_test/Data
 mkdir -p bin
-cd bin 
-mkdir -p release
-mkdir -p debug
+mkdir -p bin/release
+mkdir -p bin/debug
+cd bin
 
 # Builds target
 if [ "$1" = "release" ]
 then
     target_release
-    cp bin/release/nukclear_sdl_gl_test  nukclear_sdl_gl_test /nukclear_sdl_gl_test 
+    cp bin/release/nukclear_sdl_gl_test  nukclear_sdl_gl_test/nukclear_sdl_gl_test 
 else
     target_debug
 fi
 
-cp -R Data nukclear_sdl_gl_test /Data
+cp -R Data nukclear_sdl_gl_test/Data
