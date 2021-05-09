@@ -19,7 +19,7 @@ int main(void)
     //=======================================
     //          SDL SET UP SECTION
     //=======================================
-    SDL_Init(SDL_INIT_VIDEO);
+    SDL_Init(SDL_INIT_EVERYTHING);
 
     // Set up SDL to work with OpenGL (https://wiki.libsdl.org/SDL_GLattr)
     // Enable hardware acceleration
@@ -147,6 +147,7 @@ int main(void)
     //=======================================
     //          MAIN LOOP
     //=======================================
+    const Uint8* keyboard = NULL; 
     bool running = true;
     while (running) {
         nk_input_begin(ctx);
@@ -166,6 +167,21 @@ int main(void)
             }
         }
 
+        // Input
+        // https://wiki.libsdl.org/SDL_Scancode 
+        keyboard = SDL_GetKeyboardState(NULL);
+        if (keyboard[SDL_SCANCODE_W]) {
+            printf("W was pressed\n");
+            fflush(stdout);
+        }
+
+        // Update
+
+
+        // GUI
+
+
+        // Render
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         nk_overview(ctx);
 
