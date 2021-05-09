@@ -2,12 +2,11 @@
 
 #include <cglm/struct.h>
 
-typedef mat4s Matrix4;
-typedef vec3s Vector3;
+typedef mat4 Matrix4;
+typedef vec3 Vector3;
 
-#define VECTOR3_ZERO        GLMS_VEC3_ZERO_INIT
-#define MATRIX4_IDENTITY    GLMS_MAT4_IDENTITY_INIT
+#define VECTOR3_ZERO        GLM_VEC3_ZERO_INIT
+#define MATRIX4_IDENTITY    GLM_MAT4_IDENTITY_INIT
 
-Vector3 initVector3(float x, float y, float z);
 
-Matrix4 createModelMatrix(const Vector3* position, const Vector3* rotation);
+void createModelMatrix(Vector3 position, Vector3 rotation, Matrix4 dest);

@@ -151,16 +151,17 @@ int main(void)
     //          WOW LETS MAKE IT 3D
     //=======================================
     float aspect = (float)WIDTH / (float)HEIGHT;
-    Matrix4 projection = glms_perspective(glm_rad(90.0f), aspect, 0.1f, 100.0f);
+    Matrix4 projectionMatrix;
+    glm_perspective(glm_rad(90.0f), aspect, 0.1f, 100.0f, projectionMatrix);
 
     // Camera stuff
     Vector3 playerPosition = VECTOR3_ZERO;
     Vector3 playerRotation = VECTOR3_ZERO;
-    Vector3 up = initVector3(0, 1, 0);
-    Vector3 front = initVector3(0, 0, -1);
+    Vector3 up = {0, 1, 0};
+    Vector3 front = {0, 0, -1};
 
-    Vector3 modelLocation = initVector3(0, 0, -10);
-    Vector3 modelRotation = initVector3(0, 0, 0);
+    Vector3 modelLocation = {0, 0, -10};
+    Vector3 modelRotation = VECTOR3_ZERO;
 
     //=======================================
     //          MAIN LOOP
@@ -192,11 +193,13 @@ int main(void)
         // https://wiki.libsdl.org/SDL_Scancode
         keyboard = SDL_GetKeyboardState(NULL);
         if (keyboard[SDL_SCANCODE_W]) {
-            playerPosition.z -= 0.5;
-            fflush(stdout);
+            playerPosition[2] -= 0.5;
         }
 
         // Update
+        modelRotation[0] += 0.5;
+        modelRotation[1] += 0.1;
+        modelRotation[2] += 0.1;
 
         // GUI
         nk_overview(ctx);
@@ -207,19 +210,23 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // transform
-        Matrix4 modelMatrix = createModelMatrix(&modelLocation, &modelRotation);
-
+        Matrix4 modelMatrix = MATRIX4_IDENTITY;
+        createModelMatrix(modelLocation, modelRotation, modelMatrix);
 
         // View Matrix
-        Vector3 center = glms_vec3_add(playerPosition, front);
-        Matrix4 viewMatrix = glms_lookat(playerPosition, center, up);
+        Vector3 center;
+        glm_vec3_add(playerPosition, front, center);
+
+        Matrix4 viewMatrix = MATRIX4_IDENTITY;
+        glm_lookat(playerPosition, center, up, viewMatrix);
 
         // Calculate projection view matrix and then upload
-        Matrix4 projectionViewMatrix = glms_mat4_mul(projection, viewMatrix);
+        Matrix4 projectionViewMatrix = MATRIX4_IDENTITY;
+        glm_mat4_mul(projectionMatrix, viewMatrix, projectionViewMatrix);
 
         glUseProgram(shader);
-        loadMatrix4ToShader(shader, "projectionViewMatrix", &projectionViewMatrix);
-        loadMatrix4ToShader(shader, "modelMatrix", &modelMatrix);
+        loadMatrix4ToShader(shader, "projectionViewMatrix", projectionViewMatrix);
+        loadMatrix4ToShader(shader, "modelMatrix", modelMatrix);
 
         // Bind stuff then render
         glBindVertexArray(vao);

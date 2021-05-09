@@ -1,22 +1,10 @@
 #include "Maths.h"
 
-Vector3 initVector3(float x, float y, float z)
+void createModelMatrix(Vector3 position, Vector3 rotation, Matrix4 dest)
 {
-    Vector3 vec;
-    vec.x = x;
-    vec.y = y;
-    vec.z = z;
-    return vec;
-}
+    glm_translate(dest, position);
 
-Matrix4 createModelMatrix(const Vector3* position, const Vector3* rotation)
-{
-    Matrix4 modelMatrix = MATRIX4_IDENTITY;
-    modelMatrix = glms_translate(modelMatrix, *position);
-
-    // glm_rotate_x(modelMatrix, 0.0f, modelMatrix);
-    // glm_rotate_y(modelMatrix, 0.0f, modelMatrix);
-    // glm_rotate_z(modelMatrix, 0.0f, modelMatrix);
-
-    return modelMatrix;
+    glm_rotate_x(dest, glm_rad(rotation[0]), dest);
+    glm_rotate_y(dest, glm_rad(rotation[1]), dest);
+    glm_rotate_z(dest, glm_rad(rotation[2]), dest);
 }

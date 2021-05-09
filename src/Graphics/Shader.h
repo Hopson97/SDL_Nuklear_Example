@@ -6,4 +6,4 @@
 
 GLuint loadShaders(const char* vertexFilename, const char* fragmentFileName);
 
-void loadMatrix4ToShader(GLuint shader, const char* name, const Matrix4* matrix);
+void loadMatrix4ToShader(GLuint shader, const char* name, const Matrix4 matrix);
