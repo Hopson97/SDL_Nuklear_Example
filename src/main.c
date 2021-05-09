@@ -1,15 +1,15 @@
 #include "Graphics/GLDebug.h"
 #include "Graphics/Shader.h"
 #include "Graphics/Texture.h"
+#include "Maths.h"
 #include <SDL2/SDL.h>
+#include <cglm/cam.h>
+#include <cglm/struct.h>
 #include <glad/glad.h>
 #include <nuklear/nuklear_def.h>
 #include <nuklear/nuklear_sdl_gl3.h>
 #include <stb/stb_image.h>
 #include <stdbool.h>
-
-#include <cglm/struct.h>
-#include <cglm/cam.h>
 
 #define MAX_VERTEX_MEMORY 512 * 1024
 #define MAX_ELEMENT_MEMORY 128 * 1024
@@ -151,17 +151,16 @@ int main(void)
     //          WOW LETS MAKE IT 3D
     //=======================================
     float aspect = (float)WIDTH / (float)HEIGHT;
-    mat4s projection = glms_perspective(glm_rad(90.0f), aspect, 0.1f, 100.0f);
+    Matrix4 projection = glms_perspective(glm_rad(90.0f), aspect, 0.1f, 100.0f);
 
-    // Camera stuff 
-    vec3s playerPosition = GLMS_VEC3_ZERO_INIT;
-    vec3s playerRotation = GLMS_VEC3_ZERO_INIT;
-    vec3s up = GLMS_YUP;
-    vec3s front = GLMS_VEC3_ZERO_INIT;
-    front.z = -1.0f;
+    // Camera stuff
+    Vector3 playerPosition = VECTOR3_ZERO;
+    Vector3 playerRotation = VECTOR3_ZERO;
+    Vector3 up = initVector3(0, 1, 0);
+    Vector3 front = initVector3(0, 0, -1);
 
-    vec3s modelLocation = GLMS_VEC3_ZERO_INIT;
-    modelLocation.z = -10.0f;
+    Vector3 modelLocation = initVector3(0, 0, -10);
+    Vector3 modelRotation = initVector3(0, 0, 0);
 
     //=======================================
     //          MAIN LOOP
@@ -208,23 +207,19 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // transform
-        mat4s modelMatrix = GLMS_MAT4_IDENTITY_INIT;
-        modelMatrix = glms_translate(modelMatrix, modelLocation);
+        Matrix4 modelMatrix = createModelMatrix(&modelLocation, &modelRotation);
 
-        // glm_rotate_x(modelMatrix, 0.0f, modelMatrix);
-        // glm_rotate_y(modelMatrix, 0.0f, modelMatrix);
-        // glm_rotate_z(modelMatrix, 0.0f, modelMatrix);
 
         // View Matrix
-        vec3s center =  glms_vec3_add(playerPosition, front);
-        mat4s viewMatrix = glms_lookat(playerPosition, center, up);
+        Vector3 center = glms_vec3_add(playerPosition, front);
+        Matrix4 viewMatrix = glms_lookat(playerPosition, center, up);
 
         // Calculate projection view matrix and then upload
-        mat4s projectionViewMatrix = glms_mat4_mul(projection, viewMatrix);
+        Matrix4 projectionViewMatrix = glms_mat4_mul(projection, viewMatrix);
 
         glUseProgram(shader);
-        loadMatrix4ToShader(shader, "projectionViewMatrix", projectionViewMatrix);
-        loadMatrix4ToShader(shader, "modelMatrix", modelMatrix);
+        loadMatrix4ToShader(shader, "projectionViewMatrix", &projectionViewMatrix);
+        loadMatrix4ToShader(shader, "modelMatrix", &modelMatrix);
 
         // Bind stuff then render
         glBindVertexArray(vao);

@@ -9,6 +9,7 @@ project(
 #Set executable
 add_executable(${PROJECT_NAME}     
     src/main.c
+    src/Maths.c
     src/Graphics/GLDebug.c
     src/Graphics/Shader.c
     src/Graphics/Texture.c

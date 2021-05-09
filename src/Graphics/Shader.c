@@ -97,8 +97,8 @@ GLuint loadShaders(const char* vertexFilename, const char* fragmentFileName)
     return program;
 }
 
-void loadMatrix4ToShader(GLuint shader, const char* name, const mat4s matrix)
+void loadMatrix4ToShader(GLuint shader, const char* name, const Matrix4* matrix)
 {
     GLuint location = glGetUniformLocation(shader, name);
-    glUniformMatrix4fv(location, 1, GL_FALSE, matrix.raw[0]);
+    glUniformMatrix4fv(location, 1, GL_FALSE, matrix->raw[0]);
 }
