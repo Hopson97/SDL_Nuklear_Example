@@ -31,6 +31,10 @@ add_subdirectory(deps/glad)
 add_subdirectory(deps/cglm)
 add_subdirectory(deps/nuklear)
 
+add_library(stb
+    deps/stb/stb_impl.c
+)
+
 target_include_directories(
     ${PROJECT_NAME}
     PRIVATE
@@ -44,6 +48,7 @@ target_link_libraries(${PROJECT_NAME}
     glad 
     nuklear
     m
+    stb
     ${CMAKE_DL_LIBS}
     ${SDL2_LIBRARIES}
 )

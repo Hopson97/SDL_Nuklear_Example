@@ -1,5 +1,3 @@
-#define GL_GLEXT_PROTOTYPES
-
 #include "Graphics/GLDebug.h"
 #include "Graphics/Shader.h"
 #include <SDL2/SDL.h>
@@ -7,6 +5,7 @@
 #include <nuklear/nuklear_def.h>
 #include <nuklear/nuklear_sdl_gl3.h>
 #include <stdbool.h>
+#include <stb/stb_image.h>
 
 #define MAX_VERTEX_MEMORY 512 * 1024
 #define MAX_ELEMENT_MEMORY 128 * 1024
@@ -68,7 +67,7 @@ int main(void)
          * "../../../extra_font/DroidSans.ttf", 14, 0);*/
         nk_sdl_font_stash_end();
     }
-    nk_set_style(ctx, THEME_WHITE);
+    nk_set_style(ctx, THEME_DARK);
 
     //=======================================
     //          OPENGL OBJECT SETUP
@@ -82,25 +81,45 @@ int main(void)
         -0.5f,  0.5f, 0.0f,
     };
 
+    const GLfloat textureCoords[] = {
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+        1.0f, 0.0f,
+        0.0f, 0.0f,
+    };
+
     const GLuint indices[]  = {
         0, 1, 2, 2, 3, 0
     };
     // clang-format on
 
-    // Create triangle VAO
+    // 
+    //  Create vertex data
+    //
     GLuint vao = 0;
     GLuint vbo = 0;
+    GLuint textureVbo = 0;
     GLuint ebo = 0;
 
     glCreateVertexArrays(1, &vao);
     glEnableVertexArrayAttrib(vao, 0);
+    glEnableVertexArrayAttrib(vao, 1);
+
     glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribFormat(vao, 1, 2, GL_FLOAT, GL_FALSE, 0);
+
     glVertexArrayAttribBinding(vao, 0, 0);
+    glVertexArrayAttribBinding(vao, 1, 1);
 
     // Create VBO, attatch it to the VAO
     glCreateBuffers(1, &vbo);
     glNamedBufferStorage(vbo, sizeof(GLfloat) * 12, vertices, GL_DYNAMIC_STORAGE_BIT);
     glVertexArrayVertexBuffer(vao, 0, vbo, 0, 3 * sizeof(GLfloat));
+
+    // Create VBO for textures, attatch it to the VAO
+    glCreateBuffers(1, &textureVbo);
+    glNamedBufferStorage(textureVbo, sizeof(GLfloat) * 8, textureCoords, GL_DYNAMIC_STORAGE_BIT);
+    glVertexArrayVertexBuffer(vao, 1, textureVbo, 0, 2 * sizeof(GLfloat));
 
     // Create EBO, attatch to the VAO
     glCreateBuffers(1, &ebo);
@@ -111,6 +130,24 @@ int main(void)
     GLuint program =
         loadShaders("Data/Shaders/MinVertex.glsl", "Data/Shaders/MinFragment.glsl");
     glUseProgram(program);
+
+    //  
+    // Load up a texture
+    //
+    int width;
+    int height;
+    int channels;
+    unsigned char* imageData = stbi_load("Data/Textures/opengl_logo.png", &width, &height, &channels, STBI_rgb_alpha);
+    
+    GLuint texture;
+    glCreateTextures(GL_TEXTURE_2D, 1, &texture);
+    glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+    glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+    glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureStorage2D(texture, 1, GL_RGBA8, width, height);
+    glTextureSubImage2D(texture, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
+    stbi_image_free(imageData);
 
     //=======================================
     //          OPENGL MISC SETUP
@@ -140,11 +177,14 @@ int main(void)
                     break;
             }
         }
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         nk_overview(ctx);
 
         glBindVertexArray(vao);
         glUseProgram(program);
+        glBindTextureUnit(0, texture);
+
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
