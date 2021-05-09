@@ -1,5 +1,6 @@
 #pragma once
 
+#include <math.h>
 #include <cglm/struct.h>
 
 typedef mat4 Matrix4;

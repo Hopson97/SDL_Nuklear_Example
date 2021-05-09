@@ -40,6 +40,8 @@ int main(void)
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
+    
+
     // Create the window and OpenGL context
 
     SDL_Window* window = SDL_CreateWindow(
@@ -47,7 +49,7 @@ int main(void)
         HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 
     SDL_GLContext context = SDL_GL_CreateContext(window);
-
+SDL_SetRelativeMouseMode(SDL_TRUE);
     // Init OpenGL functions
     if (!gladLoadGL()) {
         printf("Error: Could not load OpenGL.");
@@ -156,9 +158,9 @@ int main(void)
 
     // Camera stuff
     Vector3 playerPosition = VECTOR3_ZERO;
-    Vector3 playerRotation = VECTOR3_ZERO;
+    Vector3 playerRotation = {0, -90.0f, 0.0};
     Vector3 up = {0, 1, 0};
-    Vector3 front = {0, 0, -1};
+    Vector3 front = VECTOR3_ZERO;
 
     Vector3 modelLocation = {0, 0, -10};
     Vector3 modelRotation = VECTOR3_ZERO;
@@ -167,6 +169,11 @@ int main(void)
     //          MAIN LOOP
     //=======================================
     const Uint8* keyboard = NULL;
+    int lastMouseX = 0;
+    int lastMouseY = 0;
+    SDL_WarpMouseInWindow(window, WIDTH / 2, HEIGHT / 2);
+    SDL_GetMouseState(&lastMouseX, &lastMouseY);
+
     bool running = true;
     while (running) {
         SDL_Delay(16); //"hack" for 60fps
@@ -190,11 +197,30 @@ int main(void)
         //=======================================
         //              INPUT
         //=======================================
+
+        // Keyboard input
         // https://wiki.libsdl.org/SDL_Scancode
         keyboard = SDL_GetKeyboardState(NULL);
         if (keyboard[SDL_SCANCODE_W]) {
             playerPosition[2] -= 0.5;
         }
+
+        // Mouse input
+        int thisMouseX;
+        int thisMouseY;
+        Uint32 mouseState = SDL_GetMouseState(&thisMouseX, &thisMouseY);
+
+        int mouseXDiff = thisMouseX - lastMouseX;
+        int mouseYDiff = thisMouseY - lastMouseY;
+        
+        playerRotation[0] += mouseYDiff / 4.0f;
+        playerRotation[1] += mouseXDiff / 4.0f;
+
+
+        SDL_WarpMouseInWindow(window, WIDTH / 2, HEIGHT / 2);
+
+        SDL_WarpMouseInWindow(window, WIDTH / 2, HEIGHT / 2);
+        SDL_GetMouseState(&lastMouseX, &lastMouseY);
 
         // Update
         modelRotation[0] += 0.5;
@@ -202,7 +228,15 @@ int main(void)
         modelRotation[2] += 0.1;
 
         // GUI
-        nk_overview(ctx);
+        if (nk_begin(ctx, "Debug Window", nk_rect(0, 0, 400, 200), 0)) {
+            nk_layout_row_dynamic(ctx, 25, 1);
+            nk_labelf(ctx, NK_STATIC, "Player Position: (%f %f %f)", playerPosition[0], playerPosition[1], playerPosition[2]);
+            nk_layout_row_dynamic(ctx, 25, 1);
+            nk_labelf(ctx, NK_STATIC, "Player Rotation: (%f %f %f)", playerRotation[0], playerRotation[1], playerRotation[2]);
+                        nk_layout_row_dynamic(ctx, 25, 1);
+            nk_labelf(ctx, NK_STATIC, "Player Front: (%f %f %f)", front[0], front[1], front[2]);
+        }
+        nk_end(ctx);
 
         //=======================================
         //          Render
@@ -215,6 +249,13 @@ int main(void)
 
         // View Matrix
         Vector3 center;
+
+
+
+        front[0] = cos(glm_rad(playerRotation[1])) * cos(glm_rad(playerRotation[0]));
+        front[1] = sin(glm_rad(playerRotation[0]));
+        front[2] = sin(glm_rad(playerRotation[1])) * cos(glm_rad(playerRotation[0]));
+        glm_normalize(front);
         glm_vec3_add(playerPosition, front, center);
 
         Matrix4 viewMatrix = MATRIX4_IDENTITY;
