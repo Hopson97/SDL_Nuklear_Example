@@ -7,20 +7,20 @@
 static char* getFileContent(const char* fileName)
 {
     char* buffer = NULL;
-    long length;
+    long length = 0;
     FILE* file = fopen(fileName, "r");
 
     if (file) {
         fseek(file, 0, SEEK_END);
         length = ftell(file);
         fseek(file, 0, SEEK_SET);
-        buffer = malloc(length);
+        buffer = malloc(length + 1);
         if (buffer) {
             fread(buffer, 1, length, file);
         }
+        buffer[length + 1] = '\0';
         fclose(file);
     }
-
     return buffer;
 }
 
@@ -97,8 +97,8 @@ GLuint loadShaders(const char* vertexFilename, const char* fragmentFileName)
     return program;
 }
 
-void shaderLoadUniformMatrix4(Shader* shader, const char* name, const mat4 matrix)
+void loadMatrix4ToShader(GLuint shader, const char* name, const mat4 matrix)
 {
-    GLuint location = glGetUniformLocation(shader->program, name);
-    glUniformMatrix4fv(location, 1, GL_FALSE, (float*)matrix);
+    GLuint location = glGetUniformLocation(shader, name);
+    glUniformMatrix4fv(location, 1, GL_FALSE, matrix[0]);
 }

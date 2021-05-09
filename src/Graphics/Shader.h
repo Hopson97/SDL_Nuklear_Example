@@ -1,17 +1,10 @@
 #pragma once
 
-#include <glad/glad.h>
-#include <stdbool.h>
 #include <cglm/include/cglm/cglm.h>
 #include <cglm/include/cglm/mat4.h>
-
-struct UniformLocation;
-
-typedef struct Shader {
-    GLuint program;
-} Shader; 
-
+#include <glad/glad.h>
+#include <stdbool.h>
 
 GLuint loadShaders(const char* vertexFilename, const char* fragmentFileName);
 
-void shaderLoadUniformMatrix4(Shader* shader, const char* name, const mat4 matrix);
+void loadMatrix4ToShader(GLuint shader, const char* name, const mat4 matrix);

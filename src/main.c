@@ -1,12 +1,14 @@
 #include "Graphics/GLDebug.h"
 #include "Graphics/Shader.h"
+#include "Graphics/Texture.h"
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
 #include <nuklear/nuklear_def.h>
 #include <nuklear/nuklear_sdl_gl3.h>
-#include <stdbool.h>
 #include <stb/stb_image.h>
-#include "Graphics/Texture.h"
+#include <stdbool.h>
+
+#include <cglm/cam.h>
 
 #define MAX_VERTEX_MEMORY 512 * 1024
 #define MAX_ELEMENT_MEMORY 128 * 1024
@@ -38,11 +40,11 @@ int main(void)
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
     // Create the window and OpenGL context
-    
+
     SDL_Window* window = SDL_CreateWindow(
         "OpenGL Nuklear Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH,
         HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
-        
+
     SDL_GLContext context = SDL_GL_CreateContext(window);
 
     // Init OpenGL functions
@@ -94,7 +96,7 @@ int main(void)
     };
     // clang-format on
 
-    // 
+    //
     //  Create vertex data
     //
     GLuint vao = 0;
@@ -119,7 +121,8 @@ int main(void)
 
     // Create VBO for textures, attatch it to the VAO
     glCreateBuffers(1, &textureVbo);
-    glNamedBufferStorage(textureVbo, sizeof(GLfloat) * 8, textureCoords, GL_DYNAMIC_STORAGE_BIT);
+    glNamedBufferStorage(textureVbo, sizeof(GLfloat) * 8, textureCoords,
+                         GL_DYNAMIC_STORAGE_BIT);
     glVertexArrayVertexBuffer(vao, 1, textureVbo, 0, 2 * sizeof(GLfloat));
 
     // Create EBO, attatch to the VAO
@@ -128,14 +131,13 @@ int main(void)
     glVertexArrayElementBuffer(vao, ebo);
 
     // Load shaders
-    GLuint program =
+    GLuint shader =
         loadShaders("Data/Shaders/MinVertex.glsl", "Data/Shaders/MinFragment.glsl");
-    glUseProgram(program);
 
-    //  
+    //
     // Load up a texture
     //
-    Texture2D texture = load2DTexture("Data/Textures/opengl_logo.png");
+    struct Texture2D texture = load2DTexture("Data/Textures/opengl_logo.png");
 
     //=======================================
     //          OPENGL MISC SETUP
@@ -145,11 +147,27 @@ int main(void)
     glViewport(0, 0, WIDTH, HEIGHT);
 
     //=======================================
+    //          WOW LETS MAKE IT 3D
+    //=======================================
+    mat4 projection = GLM_MAT4_IDENTITY_INIT;
+    float aspect = (float)WIDTH / (float)HEIGHT;
+    glm_perspective(glm_rad(90.0f), aspect, 0.1f, 100.0f, projection);
+
+    // Camera stuff 
+    vec3 playerPosition = {0.0f};
+    vec3 playerRotation = {0.0f};
+    vec3 up = {0.0f, 1.0f, 0.0f};
+    vec3 front = {0.0f, 0.0f, -1};
+
+    vec3 modelLocation = {0.0f, 0.0f, -10.1f};
+
+    //=======================================
     //          MAIN LOOP
     //=======================================
-    const Uint8* keyboard = NULL; 
+    const Uint8* keyboard = NULL;
     bool running = true;
     while (running) {
+        SDL_Delay(16); //"hack" for 60fps
         nk_input_begin(ctx);
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
@@ -167,8 +185,10 @@ int main(void)
             }
         }
 
-        // Input
-        // https://wiki.libsdl.org/SDL_Scancode 
+        //=======================================
+        //              INPUT
+        //=======================================
+        // https://wiki.libsdl.org/SDL_Scancode
         keyboard = SDL_GetKeyboardState(NULL);
         if (keyboard[SDL_SCANCODE_W]) {
             printf("W was pressed\n");
@@ -177,18 +197,39 @@ int main(void)
 
         // Update
 
-
         // GUI
-
-
-        // Render
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         nk_overview(ctx);
 
-        glBindVertexArray(vao);
-        glUseProgram(program);
-        glBindTextureUnit(0, texture.id);
+        //=======================================
+        //          Render
+        //=======================================
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // transform
+        mat4 modelMatrix = GLM_MAT4_IDENTITY_INIT;
+        glm_translate(modelMatrix, modelLocation);
+
+        // glm_rotate_x(modelMatrix, 0.0f, modelMatrix);
+        // glm_rotate_y(modelMatrix, 0.0f, modelMatrix);
+        // glm_rotate_z(modelMatrix, 0.0f, modelMatrix);
+
+        // View Matrix
+        mat4 viewMatrix = GLM_MAT4_IDENTITY_INIT;
+        vec3 center = {0};
+        glm_vec3_add(playerPosition, front, center);
+        glm_lookat(playerPosition, center, up, viewMatrix);
+
+        // Calculate projection view matrix and then upload
+        mat4 projectionViewMatrix = GLM_MAT4_IDENTITY_INIT;
+        glm_mat4_mul(projection, viewMatrix, projectionViewMatrix);
+
+        glUseProgram(shader);
+        loadMatrix4ToShader(shader, "projectionViewMatrix", projectionViewMatrix);
+        loadMatrix4ToShader(shader, "modelMatrix", modelMatrix);
+
+        // Bind stuff then render
+        glBindVertexArray(vao);
+        glBindTextureUnit(0, texture.id);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
@@ -202,7 +243,7 @@ int main(void)
     glDeleteBuffers(1, &vbo);
     glDeleteBuffers(1, &ebo);
     glDeleteVertexArrays(1, &vao);
-    glDeleteProgram(program);
+    glDeleteProgram(shader);
     nk_sdl_shutdown();
     SDL_GL_DeleteContext(context);
     SDL_DestroyWindow(window);
