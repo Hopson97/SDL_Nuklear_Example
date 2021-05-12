@@ -8,7 +8,11 @@
 #include <nuklear/nuklear_def.h>
 #include <nuklear/nuklear_sdl_gl3.h>
 #include <stb/stb_image.h>
+#include <stb/stb_vorbis.h>
 #include <stdbool.h>
+
+#include <AL/al.h>
+#include <AL/alc.h>
 
 #define MAX_VERTEX_MEMORY 512 * 1024
 #define MAX_ELEMENT_MEMORY 128 * 1024
@@ -71,6 +75,51 @@ int main(void)
     }
     nk_set_style(ctx, THEME_DARK);
 
+    //=======================================
+    //          OPENAL SET UP
+    //=======================================
+    ALCdevice* soundDevice = alcOpenDevice(NULL);
+    if (!soundDevice) {
+        fprintf(stderr, "Failed to open the OpenAL Device.");
+        return 1;
+    }
+    ALCcontext* openalContext = alcCreateContext(soundDevice, NULL);
+    if (!openalContext) {
+        fprintf(stderr, "Failed to create the OpenAL Context");
+        return 1;
+    }
+
+    alcMakeContextCurrent(openalContext);
+
+
+    // Load the OGG file
+    short* soundBuffer = NULL;
+    int audioChannels = 0;
+    int rate = 0;
+    int samples = stb_vorbis_decode_filename("Data/sample.ogg", &audioChannels, &rate,
+                                             &soundBuffer);
+
+    // Create a sound buffer for the
+    ALuint alBuffer = 0;
+    alGenBuffers(1, &alBuffer);
+    alBufferData(alBuffer, AL_FORMAT_STEREO16, soundBuffer, samples * 2 * sizeof(short),
+                 rate);
+
+    // Create an OpenGL source
+    ALuint alSource = 0;
+    alGenSources(1, &alSource);
+    alSourceQueueBuffers(alSource, 1, &alBuffer);
+
+    alSourcef(alSource, AL_GAIN, 0.1f);
+    alSourcef(alSource, AL_PITCH, 0.9f);
+
+    alListener3f(AL_VELOCITY, 0, 0, 0);
+
+
+    alSourcePlay(alSource);
+
+    printf("OpenAL Error Code: %d", alGetError());
+    fflush(stdout);
     //=======================================
     //          OPENGL OBJECT SETUP
     //=======================================
@@ -174,8 +223,20 @@ int main(void)
     Vector3 up = {0, 1, 0};
     Vector3 front = VECTOR3_ZERO;
 
-    Vector3 modelLocation = {0, 0, -10};
-    Vector3 modelRotation = VECTOR3_ZERO;
+    // Scene objects
+    int count = 100;
+    Vector3 modelLocations[count];
+    Vector3 modelRotations[count];
+
+    for (int i = 0; i < count; i++) {
+        modelLocations[i][0] = rand() % 75;
+        modelLocations[i][1] = rand() % 75;
+        modelLocations[i][2] = rand() % 75;
+
+        modelRotations[i][0] = rand() % 360;
+        modelRotations[i][1] = rand() % 360;
+        modelRotations[i][2] = rand() % 360;
+    }
 
     //=======================================
     //          MAIN LOOP
@@ -240,6 +301,7 @@ int main(void)
 
         SDL_GetMouseState(&lastMouseX, &lastMouseY);
 
+
         // SDL_WarpMouseInWindow(window, WIDTH / 2, HEIGHT / 2);
         // SDL_SetRelativeMouseMode(SDL_FALSE);
 
@@ -258,8 +320,7 @@ int main(void)
                       front[2]);
 
             nk_layout_row_dynamic(ctx, 25, 1);
-            nk_labelf(ctx, NK_STATIC, "Mouse Position: (%d %d)", lastMouseX, lastMouseY,
-                      front[2]);
+            nk_labelf(ctx, NK_STATIC, "Mouse Position: (%d %d)", lastMouseX, lastMouseY);
         }
         nk_end(ctx);
 
@@ -267,10 +328,6 @@ int main(void)
         //          Render
         //=======================================
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // transform
-        Matrix4 modelMatrix = MATRIX4_IDENTITY;
-        createModelMatrix(modelLocation, modelRotation, modelMatrix);
 
         // View Matrix
         Vector3 center;
@@ -290,12 +347,16 @@ int main(void)
 
         glUseProgram(shader);
         loadMatrix4ToShader(shader, "projectionViewMatrix", projectionViewMatrix);
-        loadMatrix4ToShader(shader, "modelMatrix", modelMatrix);
 
         // Bind stuff then render
         glBindVertexArray(vao);
         glBindTextureUnit(0, texture);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        for (int i = 0; i < count; i++) {
+            Matrix4 modelMatrix = MATRIX4_IDENTITY;
+            createModelMatrix(modelLocations[i], modelRotations[i], modelMatrix);
+            loadMatrix4ToShader(shader, "modelMatrix", modelMatrix);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        }
 
         nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
 
@@ -305,11 +366,23 @@ int main(void)
     //=======================================
     //          CLEAN UP
     //=======================================
+    // OpenAL
+    alDeleteBuffers(1, &alBuffer);
+    alDeleteSources(1, &alSource);
+    alcMakeContextCurrent(NULL);
+    alcDestroyContext(context);
+    alcCloseDevice(soundDevice);
+
+    // OpenGL
     glDeleteBuffers(1, &vbo);
     glDeleteBuffers(1, &ebo);
     glDeleteVertexArrays(1, &vao);
     glDeleteProgram(shader);
+
+    // Nuklear
     nk_sdl_shutdown();
+
+    // SDL
     SDL_GL_DeleteContext(context);
     SDL_DestroyWindow(window);
     SDL_Quit();

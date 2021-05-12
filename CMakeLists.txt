@@ -47,6 +47,7 @@ target_link_libraries(${PROJECT_NAME}
     nuklear
     m
     stb
+    openal
     ${CMAKE_DL_LIBS}
     ${SDL2_LIBRARIES}
 )
