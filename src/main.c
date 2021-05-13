@@ -9,7 +9,7 @@
 #include <nuklear/nuklear_sdl_gl3.h>
 #include <stb/stb_image.h>
 #include <stdbool.h>
-
+#include <cute_headers/cute_sound.h>
 
 #define MAX_VERTEX_MEMORY 512 * 1024
 #define MAX_ELEMENT_MEMORY 128 * 1024
@@ -71,6 +71,21 @@ int main(void)
         nk_sdl_font_stash_end();
     }
     nk_set_style(ctx, THEME_DARK);
+
+    //=======================================
+    //          CUTE SOUNDS
+    //=======================================
+	cs_loaded_sound_t loaded = cs_load_wav("Data/The Elder Scrolls IV Oblivion OST- Through The Valleys.wav");
+	cs_context_t* audioContext = cs_make_context(NULL, loaded.sample_rate * 2, 1024 * 2, 0, NULL);
+    
+
+    printf("Sample rate: %d", loaded.sample_rate);
+    fflush(stdout);
+
+	cs_playing_sound_t jump = cs_make_playing_sound(&loaded);
+	cs_spawn_mix_thread(audioContext);
+
+    cs_insert_sound(audioContext, &jump);
 
     //=======================================
     //          OPENGL OBJECT SETUP
@@ -318,6 +333,7 @@ int main(void)
     //          CLEAN UP
     //=======================================
 
+    cs_free_sound(&loaded);
 
     // OpenGL
     glDeleteBuffers(1, &vbo);

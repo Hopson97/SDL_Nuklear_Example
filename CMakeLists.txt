@@ -28,10 +28,7 @@ endif()
 
 find_package(SDL2 REQUIRED)
 
-add_subdirectory(deps/glad)
-add_subdirectory(deps/cglm)
-add_subdirectory(deps/nuklear)
-add_subdirectory(deps/stb)
+add_subdirectory(deps)
 
 target_include_directories(
     ${PROJECT_NAME}
@@ -42,11 +39,16 @@ target_include_directories(
 
 #Finally
 target_link_libraries(${PROJECT_NAME} 
+    m
+    dl
+    pthread
+
     cglm 
+    cute_headers
     glad 
     nuklear
-    m
     stb
+    
     ${CMAKE_DL_LIBS}
     ${SDL2_LIBRARIES}
 )
