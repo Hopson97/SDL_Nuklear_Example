@@ -4,15 +4,15 @@
 #include <SDL2/SDL.h>
 #include <cglm/cam.h>
 #include <cglm/struct.h>
+#include <cute_headers/cute_sound.h>
 #include <glad/glad.h>
 #include <nuklear/nuklear_def.h>
 #include <nuklear/nuklear_sdl_gl3.h>
 #include <stb/stb_image.h>
 #include <stdbool.h>
-#include <cute_headers/cute_sound.h>
 
-#define MAX_VERTEX_MEMORY 512 * 1024
-#define MAX_ELEMENT_MEMORY 128 * 1024
+#define MAX_VERTEX_MEMORY 0x80000
+#define MAX_ELEMENT_MEMORY 0x20000
 
 #define WIDTH 1600
 #define HEIGHT 900
@@ -39,6 +39,9 @@ int main(void)
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
+    SDL_SetRelativeMouseMode(SDL_TRUE);
+
 
     // Create the window and OpenGL context
 
@@ -75,16 +78,17 @@ int main(void)
     //=======================================
     //          CUTE SOUNDS
     //=======================================
-	cs_loaded_sound_t loaded = cs_load_wav("Data/The Elder Scrolls IV Oblivion OST- Through The Valleys.wav");
-	cs_context_t* audioContext = cs_make_context(NULL, loaded.sample_rate * 2, 1024 * 2, 0, NULL);
-    
-
-    printf("Sample rate: %d", loaded.sample_rate);
+    cs_loaded_sound_t loaded = cs_load_wav("Data/file_example_WAV_1MG.wav");
     fflush(stdout);
 
-	cs_playing_sound_t jump = cs_make_playing_sound(&loaded);
-	cs_spawn_mix_thread(audioContext);
+    cs_context_t* audioContext =
+        cs_make_context(NULL, loaded.sample_rate / 2, 1024 * 2, 0, NULL);
 
+
+    cs_playing_sound_t jump = cs_make_playing_sound(&loaded);
+    cs_spawn_mix_thread(audioContext);
+
+    cs_set_volume(&jump, 0.5, 0.5);
     cs_insert_sound(audioContext, &jump);
 
     //=======================================
@@ -209,11 +213,6 @@ int main(void)
     //          MAIN LOOP
     //=======================================
     const Uint8* keyboard = NULL;
-    int lastMouseX = 0;
-    int lastMouseY = 0;
-    SDL_WarpMouseInWindow(window, WIDTH / 2, HEIGHT / 2);
-    SDL_GetMouseState(&lastMouseX, &lastMouseY);
-
     bool running = true;
     while (running) {
         SDL_Delay(16); //"hack" for 60fps
@@ -226,6 +225,15 @@ int main(void)
                     if (event.key.keysym.sym == SDLK_ESCAPE) {
                         running = false;
                     }
+                    break;
+
+                case SDL_MOUSEMOTION:
+                {
+                    int mouseXDiff = event.motion.xrel;
+                    int mouseYDiff = event.motion.yrel;
+                    playerRotation[0] += mouseYDiff / 4.0f;
+                    playerRotation[1] += mouseXDiff / 4.0f;
+                }
                     break;
 
                 case SDL_QUIT:
@@ -253,23 +261,7 @@ int main(void)
         if (keyboard[SDL_SCANCODE_D]) {
             moveVectorRight(playerPosition, playerRotation, 1);
         }
-        //  SDL_SetRelativeMouseMode(SDL_TRUE);
-
-        // Mouse input
-        int thisMouseX;
-        int thisMouseY;
-        Uint32 mouseState = SDL_GetMouseState(&thisMouseX, &thisMouseY);
-
-        int mouseXDiff = thisMouseX - lastMouseX;
-        int mouseYDiff = thisMouseY - lastMouseY;
-
-        playerRotation[0] += mouseYDiff / 4.0f;
-        playerRotation[1] += mouseXDiff / 4.0f;
-
-        SDL_GetMouseState(&lastMouseX, &lastMouseY);
-
-        // SDL_WarpMouseInWindow(window, WIDTH / 2, HEIGHT / 2);
-        // SDL_SetRelativeMouseMode(SDL_FALSE);
+        
 
         // Update
 
@@ -284,9 +276,6 @@ int main(void)
             nk_layout_row_dynamic(ctx, 25, 1);
             nk_labelf(ctx, NK_STATIC, "Player Front: (%f %f %f)", front[0], front[1],
                       front[2]);
-
-            nk_layout_row_dynamic(ctx, 25, 1);
-            nk_labelf(ctx, NK_STATIC, "Mouse Position: (%d %d)", lastMouseX, lastMouseY);
         }
         nk_end(ctx);
 
@@ -334,6 +323,7 @@ int main(void)
     //=======================================
 
     cs_free_sound(&loaded);
+    cs_shutdown_context(audioContext);
 
     // OpenGL
     glDeleteBuffers(1, &vbo);
