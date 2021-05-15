@@ -42,7 +42,6 @@ int main(void)
 
     SDL_SetRelativeMouseMode(SDL_TRUE);
 
-
     // Create the window and OpenGL context
 
     SDL_Window* window = SDL_CreateWindow(
@@ -84,7 +83,6 @@ int main(void)
     cs_context_t* audioContext =
         cs_make_context(NULL, loaded.sample_rate / 2, 1024 * 2, 0, NULL);
 
-
     cs_playing_sound_t jump = cs_make_playing_sound(&loaded);
     cs_spawn_mix_thread(audioContext);
 
@@ -95,19 +93,19 @@ int main(void)
     //          OPENGL OBJECT SETUP
     //=======================================
     // clang-format off
-    const GLfloat vertices[] = {
 
-        -0.5f, -0.5f, 0.0f, 
-         0.5f, -0.5f, 0.0f, 
-         0.5f,  0.5f, 0.0f, 
-        -0.5f,  0.5f, 0.0f,
+    struct Vertex
+    {
+        vec3 position;
+        vec2 texture;
     };
 
-    const GLfloat textureCoords[] = {
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 0.0f,
+    struct Vertex vertices[4] = {
+
+        {{-0.5f, -0.5f, 0.0f}, {0.0f, 1.0f}},
+        {{0.5f, -0.5f, 0.0f}, {1.0f, 1.0f}},
+        {{ 0.5f,  0.5f, 0.0f}, {1.0f, 0.0f}},
+        {{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f}},
     };
 
     const GLuint indices[]  = {
@@ -120,34 +118,32 @@ int main(void)
     //
     GLuint vao = 0;
     GLuint vbo = 0;
-    GLuint textureVbo = 0;
     GLuint ebo = 0;
 
+    // Create VBO, attatch it to the VAO
     glCreateVertexArrays(1, &vao);
+    glCreateBuffers(1, &vbo);
+    glCreateBuffers(1, &ebo);
+
+    glNamedBufferStorage(vbo, sizeof(struct Vertex) * 4, vertices, GL_DYNAMIC_STORAGE_BIT);
+    glNamedBufferStorage(ebo, sizeof(GLuint) * 6,           indices, GL_DYNAMIC_STORAGE_BIT);
+
+    glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(struct Vertex));
+    glVertexArrayElementBuffer(vao, ebo);
+
+
     glEnableVertexArrayAttrib(vao, 0);
     glEnableVertexArrayAttrib(vao, 1);
 
-    glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribFormat(vao, 1, 2, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE, offsetof(struct Vertex, position));
+    glVertexArrayAttribFormat(vao, 1, 2, GL_FLOAT, GL_FALSE, offsetof(struct Vertex, texture));
 
     glVertexArrayAttribBinding(vao, 0, 0);
-    glVertexArrayAttribBinding(vao, 1, 1);
+    glVertexArrayAttribBinding(vao, 1, 0);
 
-    // Create VBO, attatch it to the VAO
-    glCreateBuffers(1, &vbo);
-    glNamedBufferStorage(vbo, sizeof(GLfloat) * 12, vertices, GL_DYNAMIC_STORAGE_BIT);
-    glVertexArrayVertexBuffer(vao, 0, vbo, 0, 3 * sizeof(GLfloat));
 
-    // Create VBO for textures, attatch it to the VAO
-    glCreateBuffers(1, &textureVbo);
-    glNamedBufferStorage(textureVbo, sizeof(GLfloat) * 8, textureCoords,
-                         GL_DYNAMIC_STORAGE_BIT);
-    glVertexArrayVertexBuffer(vao, 1, textureVbo, 0, 2 * sizeof(GLfloat));
 
-    // Create EBO, attatch to the VAO
-    glCreateBuffers(1, &ebo);
-    glNamedBufferStorage(ebo, sizeof(GLuint) * 6, indices, GL_DYNAMIC_STORAGE_BIT);
-    glVertexArrayElementBuffer(vao, ebo);
+
 
     // Load shaders
     GLuint shader =
@@ -227,14 +223,12 @@ int main(void)
                     }
                     break;
 
-                case SDL_MOUSEMOTION:
-                {
+                case SDL_MOUSEMOTION: {
                     int mouseXDiff = event.motion.xrel;
                     int mouseYDiff = event.motion.yrel;
                     playerRotation[0] += mouseYDiff / 4.0f;
                     playerRotation[1] += mouseXDiff / 4.0f;
-                }
-                    break;
+                } break;
 
                 case SDL_QUIT:
                     running = false;
@@ -261,7 +255,6 @@ int main(void)
         if (keyboard[SDL_SCANCODE_D]) {
             moveVectorRight(playerPosition, playerRotation, 1);
         }
-        
 
         // Update
 
