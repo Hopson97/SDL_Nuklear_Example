@@ -33,14 +33,14 @@ void moveVectorLeft(Vector3 position, Vector3 rotation, float factor)
 {
     float yaw = glm_rad(rotation[1] + 90);
 
-    position[0] += cosf(yaw) * factor;
-    position[2] += sinf(yaw) * factor;
+    position[0] -= cosf(yaw) * factor;
+    position[2] -= sinf(yaw) * factor;
 }
 
 void moveVectorRight(Vector3 position, Vector3 rotation, float factor)
 {
     float yaw = glm_rad(rotation[1] + 90);
 
-    position[0] -= cosf(yaw) * factor;
-    position[2] -= sinf(yaw) * factor;
+    position[0] += cosf(yaw) * factor;
+    position[2] += sinf(yaw) * factor;
 }

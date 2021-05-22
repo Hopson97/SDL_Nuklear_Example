@@ -9,6 +9,7 @@
 #include <nuklear/nuklear_def.h>
 #include <nuklear/nuklear_sdl_gl3.h>
 #include <stb/stb_image.h>
+#include <stb/stb_perlin.h>
 #include <stdbool.h>
 
 #define MAX_VERTEX_MEMORY 0x80000
@@ -81,7 +82,7 @@ int main(void)
     fflush(stdout);
 
     cs_context_t* audioContext =
-        cs_make_context(NULL, loaded.sample_rate / 2, 1024 * 2, 0, NULL);
+        cs_make_context(NULL, loaded.sample_rate, 1024 * 2, 0, NULL);
 
     cs_playing_sound_t jump = cs_make_playing_sound(&loaded);
     cs_spawn_mix_thread(audioContext);
@@ -120,30 +121,31 @@ int main(void)
     GLuint vbo = 0;
     GLuint ebo = 0;
 
-    // Create VBO, attatch it to the VAO
+    // glGenBuffers, glGenVertexArrays
     glCreateVertexArrays(1, &vao);
     glCreateBuffers(1, &vbo);
     glCreateBuffers(1, &ebo);
 
-    glNamedBufferStorage(vbo, sizeof(struct Vertex) * 4, vertices, GL_DYNAMIC_STORAGE_BIT);
-    glNamedBufferStorage(ebo, sizeof(GLuint) * 6,           indices, GL_DYNAMIC_STORAGE_BIT);
+    // glBufferData
+    glNamedBufferStorage(vbo, sizeof(struct Vertex) * 4, vertices,
+                         GL_DYNAMIC_STORAGE_BIT);
+    glNamedBufferStorage(ebo, sizeof(GLuint) * 6, indices, GL_DYNAMIC_STORAGE_BIT);
 
+    // Attach the vertex array to the vertex buffer and element buffer
     glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(struct Vertex));
     glVertexArrayElementBuffer(vao, ebo);
 
-
+    // glEnableVertexAttribArray
     glEnableVertexArrayAttrib(vao, 0);
     glEnableVertexArrayAttrib(vao, 1);
 
-    glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE, offsetof(struct Vertex, position));
-    glVertexArrayAttribFormat(vao, 1, 2, GL_FLOAT, GL_FALSE, offsetof(struct Vertex, texture));
-
+    // glVertexAttribPointer
+    glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE,
+                              offsetof(struct Vertex, position));
+    glVertexArrayAttribFormat(vao, 1, 2, GL_FLOAT, GL_FALSE,
+                              offsetof(struct Vertex, texture));
     glVertexArrayAttribBinding(vao, 0, 0);
     glVertexArrayAttribBinding(vao, 1, 0);
-
-
-
-
 
     // Load shaders
     GLuint shader =
@@ -205,6 +207,109 @@ int main(void)
         modelRotations[i][2] = rand() % 360;
     }
 
+
+// Generate some spicy terrain
+#define VERTS 128
+#define SIZE 50
+    struct Vertex terrainVerts[VERTS * VERTS];
+    int ptr = 0;
+
+    for (int z = 0; z < VERTS; z++) {
+        for (int x = 0; x < VERTS; x++) {
+            float fx = (float)x;
+            float fy = (float)z;
+
+            float vx = fx / (VERTS - 1) * SIZE;
+            float vz = fy / (VERTS - 1) * SIZE;
+
+            // Begin iterating through the octaves
+
+            int octaves = 5;
+            float smooth = 200;
+            float roughness = 0.58f;
+
+            float value = 0;
+            float accumulatedAmps = 0;
+            for (int i = 0; i < octaves; i++) {
+                float frequency = powf(2.0f, i);
+                float amplitude = powf(roughness, i);
+
+                float nx = x * frequency / smooth;
+                float nz = z * frequency / smooth;
+
+                float noise = stb_perlin_noise3_seed(nx, 4221, nz, 0, 0, 0, 21421);
+                noise = (noise + 1.0f) / 2.0f;
+                value += noise * amplitude;
+                accumulatedAmps += amplitude;
+            }
+            float height = (value / accumulatedAmps) * 100;
+
+
+            struct Vertex vertex;
+            vertex.position[0] = vx;
+            vertex.position[1] = height - 100;
+            vertex.position[2] = vz;
+
+            float u = fx / VERTS - 1;
+            float v = fy / VERTS - 1;
+            vertex.texture[0] = u;
+            vertex.texture[1] = v;
+
+            terrainVerts[ptr++] = vertex;
+        }
+    }
+
+    int indicesCount = 0;
+    ptr = 0;
+    GLuint terrainIndices[VERTS * VERTS * 10];
+    for (int y = 0; y < (VERTS - 1); y += 1) {
+        for (int x = 0; x < (VERTS - 1); x += 1) {
+            int topLeft = (y * VERTS) + x;
+            int topRight = topLeft + 1;
+            int bottomLeft = ((y + 1) * VERTS) + x;
+            int bottomRight = bottomLeft + 1;
+
+            terrainIndices[ptr++] = topLeft;
+            terrainIndices[ptr++] = bottomLeft;
+            terrainIndices[ptr++] = topRight;
+            terrainIndices[ptr++] = bottomLeft;
+            terrainIndices[ptr++] = bottomRight;
+            terrainIndices[ptr++] = topRight;
+
+            indicesCount += 6;
+        }
+    }
+
+    //
+    //  Create vertex data
+    //
+    GLuint terrainvao = 0;
+    GLuint terrainvbo = 0;
+    GLuint terrainebo = 0;
+
+    // glGenBuffers, glGenVertexArrays
+    glCreateVertexArrays(1, &terrainvao);
+    glCreateBuffers(1, &terrainvbo);
+    glCreateBuffers(1, &terrainebo);
+
+    // glBufferData
+    glNamedBufferStorage(terrainvbo, sizeof(struct Vertex) * VERTS * VERTS, terrainVerts, GL_DYNAMIC_STORAGE_BIT);
+    glNamedBufferStorage(terrainebo, sizeof(GLuint) * indicesCount, terrainIndices, GL_DYNAMIC_STORAGE_BIT);
+
+    // Attach the vertex array to the vertex buffer and element buffer
+    glVertexArrayVertexBuffer(terrainvao, 0, terrainvbo, 0, sizeof(struct Vertex));
+    glVertexArrayElementBuffer(terrainvao, terrainebo);
+
+    // glEnableVertexAttribArray
+    glEnableVertexArrayAttrib(terrainvao, 0);
+    glEnableVertexArrayAttrib(terrainvao, 1);
+
+    // glVertexAttribPointer
+    glVertexArrayAttribFormat(terrainvao, 0, 3, GL_FLOAT, GL_FALSE, offsetof(struct Vertex, position));
+    glVertexArrayAttribFormat(terrainvao, 1, 2, GL_FLOAT, GL_FALSE, offsetof(struct Vertex, texture));
+    glVertexArrayAttribBinding(terrainvao, 0, 0);
+    glVertexArrayAttribBinding(terrainvao, 1, 0);
+
     //=======================================
     //          MAIN LOOP
     //=======================================
@@ -226,8 +331,10 @@ int main(void)
                 case SDL_MOUSEMOTION: {
                     int mouseXDiff = event.motion.xrel;
                     int mouseYDiff = event.motion.yrel;
-                    playerRotation[0] += mouseYDiff / 4.0f;
+                    playerRotation[0] -= mouseYDiff / 4.0f;
                     playerRotation[1] += mouseXDiff / 4.0f;
+
+                    playerRotation[0] = glm_clamp(playerRotation[0], -89.9f, 89.9f);
                 } break;
 
                 case SDL_QUIT:
@@ -305,6 +412,13 @@ int main(void)
             loadMatrix4ToShader(shader, "modelMatrix", modelMatrix);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         }
+        glBindVertexArray(terrainvao);
+
+        Matrix4 modelMatrix = MATRIX4_IDENTITY;
+        vec3 loc = VECTOR3_ZERO;
+        createModelMatrix(loc, loc, modelMatrix);
+        loadMatrix4ToShader(shader, "modelMatrix", modelMatrix);
+        glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_INT, 0);
 
         nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
 
