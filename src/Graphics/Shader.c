@@ -47,14 +47,18 @@ static bool compileShader(GLuint* shaderOut, const char* fileName, GLenum shader
 
 GLuint loadShaders(const char* vertexFilename, const char* fragmentFileName)
 {
+    char vertfullFileName[128] = "Data/Shaders/";
+    char fragfullFileName[128] = "Data/Shaders/";
+    strcat(vertfullFileName, vertexFilename);
+    strcat(fragfullFileName, fragmentFileName);
+
     GLuint vertexShader;
     GLuint fragmentShader;
-
-    if (!compileShader(&vertexShader, vertexFilename, GL_VERTEX_SHADER)) {
+    if (!compileShader(&vertexShader, vertfullFileName, GL_VERTEX_SHADER)) {
         exit(1);
     }
 
-    if (!compileShader(&fragmentShader, fragmentFileName, GL_FRAGMENT_SHADER)) {
+    if (!compileShader(&fragmentShader, fragfullFileName, GL_FRAGMENT_SHADER)) {
         exit(1);
     }
 

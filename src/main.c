@@ -1,5 +1,6 @@
 #include "Graphics/GLDebug.h"
 #include "Graphics/Shader.h"
+#include "Graphics/Texture.h"
 #include "Graphics/VertexArray.h"
 #include "Maths.h"
 #include "Utility.h"
@@ -12,7 +13,6 @@
 #include <nuklear/nuklear_sdl_gl3.h>
 #include <stb/stb_perlin.h>
 #include <stdbool.h>
-#include "Graphics/Texture.h"
 
 #define MAX_VERTEX_MEMORY 0x80000
 #define MAX_ELEMENT_MEMORY 0x20000
@@ -68,10 +68,8 @@ int main(void)
     // clang-format on
     struct VertexArray quad = MAKE_VERTEX_ARRAY(vertices, indices);
 
-    GLuint shader =
-        loadShaders("Data/Shaders/MinVertex.glsl", "Data/Shaders/MinFragment.glsl");
-    GLuint texture = loadTexture("Data/Textures/opengl_logo.png");
-
+    GLuint shader = loadShaders("MinVertex.glsl", "MinFragment.glsl");
+    GLuint texture = loadTexture("opengl_logo.png");
 
     //=======================================
     //          OPENGL MISC SETUP
