@@ -3,8 +3,7 @@
 #include <glad/glad.h>
 #include <stdio.h>
 
-static void GLAPIENTRY glDebugCallback(GLenum source, GLenum type, GLuint id,
-                                       GLenum severity, GLsizei length,
+static void GLAPIENTRY glDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
                                        const GLchar* message, const void* userParam)
 {
     // clang-format off
@@ -39,9 +38,8 @@ static void GLAPIENTRY glDebugCallback(GLenum source, GLenum type, GLuint id,
     }
     // clang-format on
 
-    fprintf(stderr,
-            "OpenGL Message.\n Type: %s\nSeverity: %s\nSource: %s\nMessage: %s\n\n",
-            typeString, severityString, sourceString, message);
+    fprintf(stderr, "OpenGL Message.\n Type: %s\nSeverity: %s\nSource: %s\nMessage: %s\n\n", typeString, severityString,
+            sourceString, message);
 }
 
 void initGLDebug()
@@ -54,7 +52,7 @@ void initGLDebug()
     glDebugMessageCallback(glDebugCallback, NULL);
 
     // this disables messages printed for successfully compiled shaders
-    glDebugMessageControl(GL_DEBUG_SOURCE_SHADER_COMPILER, GL_DEBUG_TYPE_OTHER,
-                          GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
+    glDebugMessageControl(GL_DEBUG_SOURCE_SHADER_COMPILER, GL_DEBUG_TYPE_OTHER, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL,
+                          GL_FALSE);
 #endif
 }

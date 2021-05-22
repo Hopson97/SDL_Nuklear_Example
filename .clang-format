@@ -7,7 +7,7 @@ IndentCaseLabels: true
 NamespaceIndentation: All
 BreakConstructorInitializersBeforeComma: true
 AllowShortFunctionsOnASingleLine: None
-ColumnLimit: 90
+ColumnLimit: 120
 AlwaysBreakTemplateDeclarations: true
 PointerAlignment: Left
 

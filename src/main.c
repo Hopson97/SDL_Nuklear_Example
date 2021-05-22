@@ -1,3 +1,4 @@
+#include "Camera.h"
 #include "Graphics/GLDebug.h"
 #include "Graphics/Shader.h"
 #include "Graphics/Texture.h"
@@ -43,15 +44,13 @@ int main(void)
     cs_loaded_sound_t loaded = cs_load_wav("Data/file_example_WAV_1MG.wav");
     fflush(stdout);
 
-    cs_context_t* audioContext =
-        cs_make_context(NULL, loaded.sample_rate, 1024 * 2, 0, NULL);
+    cs_context_t* audioContext = cs_make_context(NULL, loaded.sample_rate, 1024 * 2, 0, NULL);
 
     cs_playing_sound_t jump = cs_make_playing_sound(&loaded);
     cs_spawn_mix_thread(audioContext);
 
     cs_set_volume(&jump, 0.5, 0.5);
     cs_insert_sound(audioContext, &jump);
-
 
     //=======================================
     //          OPENGL OBJECT SETUP
@@ -76,15 +75,12 @@ int main(void)
     //=======================================
     //          WOW LETS MAKE IT 3D
     //=======================================
+
+    struct Camera camera = createCamera();
+
     float aspect = (float)WIDTH / (float)HEIGHT;
     Matrix4 projectionMatrix;
     glm_perspective(glm_rad(90.0f), aspect, 0.1f, 100.0f, projectionMatrix);
-
-    // Camera stuff
-    Vector3 playerPosition = VECTOR3_ZERO;
-    Vector3 playerRotation = {0, -90.0f, 0.0};
-    Vector3 up = {0, 1, 0};
-    Vector3 front = VECTOR3_ZERO;
 
     // Scene objects
     int count = 100;
@@ -129,54 +125,35 @@ int main(void)
                     }
                     break;
 
-                case SDL_MOUSEMOTION: {
-                    int mouseXDiff = event.motion.xrel;
-                    int mouseYDiff = event.motion.yrel;
-                    playerRotation[0] -= mouseYDiff / 4.0f;
-                    playerRotation[1] += mouseXDiff / 4.0f;
-
-                    playerRotation[0] = glm_clamp(playerRotation[0], -89.9f, 89.9f);
-                } break;
+                case SDL_MOUSEMOTION:
+                    cameraMouseInput(&camera, event.motion.xrel, event.motion.yrel);
+                    break;
 
                 case SDL_QUIT:
                     running = false;
                     break;
             }
         }
+        keyboard = SDL_GetKeyboardState(NULL);
 
         //=======================================
         //              INPUT
         //=======================================
-
-        // Keyboard input
-        // https://wiki.libsdl.org/SDL_Scancode
-        keyboard = SDL_GetKeyboardState(NULL);
-        if (keyboard[SDL_SCANCODE_W]) {
-            moveVectorForwards(playerPosition, playerRotation, 1);
-        }
-        if (keyboard[SDL_SCANCODE_A]) {
-            moveVectorLeft(playerPosition, playerRotation, 1);
-        }
-        if (keyboard[SDL_SCANCODE_S]) {
-            moveVectorBackwards(playerPosition, playerRotation, 1);
-        }
-        if (keyboard[SDL_SCANCODE_D]) {
-            moveVectorRight(playerPosition, playerRotation, 1);
-        }
-
+        cameraKeyboardInput(&camera, keyboard);
         // Update
+        Matrix4 projectionViewMatrix = MATRIX4_IDENTITY;
+        cameraUpdate(&camera, projectionViewMatrix);
 
         // GUI
         if (nk_begin(ctx, "Debug Window", nk_rect(0, 0, 400, 200), 0)) {
             nk_layout_row_dynamic(ctx, 25, 1);
-            nk_labelf(ctx, NK_STATIC, "Player Position: (%f %f %f)", playerPosition[0],
-                      playerPosition[1], playerPosition[2]);
+            nk_labelf(ctx, NK_STATIC, "Player Position: (%f %f %f)", camera.position[0], camera.position[1],
+                      camera.position[2]);
             nk_layout_row_dynamic(ctx, 25, 1);
-            nk_labelf(ctx, NK_STATIC, "Player Rotation: (%f %f %f)", playerRotation[0],
-                      playerRotation[1], playerRotation[2]);
+            nk_labelf(ctx, NK_STATIC, "Player Rotation: (%f %f %f)", camera.rotation[0], camera.rotation[1],
+                      camera.rotation[2]);
             nk_layout_row_dynamic(ctx, 25, 1);
-            nk_labelf(ctx, NK_STATIC, "Player Front: (%f %f %f)", front[0], front[1],
-                      front[2]);
+            nk_labelf(ctx, NK_STATIC, "Player Front: (%f %f %f)", camera.front[0], camera.front[1], camera.front[2]);
             nk_layout_row_dynamic(ctx, 25, 1);
             nk_labelf(ctx, NK_STATIC, "FPS: %d", fps);
         }
@@ -186,22 +163,6 @@ int main(void)
         //          Render
         //=======================================
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // View Matrix
-        Vector3 center;
-
-        front[0] = cos(glm_rad(playerRotation[1])) * cos(glm_rad(playerRotation[0]));
-        front[1] = sin(glm_rad(playerRotation[0]));
-        front[2] = sin(glm_rad(playerRotation[1])) * cos(glm_rad(playerRotation[0]));
-        glm_normalize(front);
-        glm_vec3_add(playerPosition, front, center);
-
-        Matrix4 viewMatrix = MATRIX4_IDENTITY;
-        glm_lookat(playerPosition, center, up, viewMatrix);
-
-        // Calculate projection view matrix and then upload
-        Matrix4 projectionViewMatrix = MATRIX4_IDENTITY;
-        glm_mat4_mul(projectionMatrix, viewMatrix, projectionViewMatrix);
 
         glUseProgram(shader);
         loadMatrix4ToShader(shader, "projectionViewMatrix", projectionViewMatrix);

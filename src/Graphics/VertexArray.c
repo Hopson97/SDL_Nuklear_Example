@@ -1,14 +1,12 @@
-#include <stb/stb_perlin.h>
 #include "VertexArray.h"
+#include <stb/stb_perlin.h>
 
-static void bufferVertexData(struct VertexArray* v, const struct Vertex* vertices,
-                             GLsizei numVerticies)
+static void bufferVertexData(struct VertexArray* v, const struct Vertex* vertices, GLsizei numVerticies)
 {
     glCreateBuffers(1, &v->vbo);
 
     // glBufferData
-    glNamedBufferStorage(v->vbo, sizeof(struct Vertex) * numVerticies, vertices,
-                         GL_DYNAMIC_STORAGE_BIT);
+    glNamedBufferStorage(v->vbo, sizeof(struct Vertex) * numVerticies, vertices, GL_DYNAMIC_STORAGE_BIT);
 
     // Attach the vertex array to the vertex buffer and element buffer
     glVertexArrayVertexBuffer(v->vao, 0, v->vbo, 0, sizeof(struct Vertex));
@@ -18,26 +16,22 @@ static void bufferVertexData(struct VertexArray* v, const struct Vertex* vertice
     glEnableVertexArrayAttrib(v->vao, 1);
 
     // glVertexAttribPointer
-    glVertexArrayAttribFormat(v->vao, 0, 3, GL_FLOAT, GL_FALSE,
-                              offsetof(struct Vertex, position));
-    glVertexArrayAttribFormat(v->vao, 1, 2, GL_FLOAT, GL_FALSE,
-                              offsetof(struct Vertex, texture));
+    glVertexArrayAttribFormat(v->vao, 0, 3, GL_FLOAT, GL_FALSE, offsetof(struct Vertex, position));
+    glVertexArrayAttribFormat(v->vao, 1, 2, GL_FLOAT, GL_FALSE, offsetof(struct Vertex, texture));
     glVertexArrayAttribBinding(v->vao, 0, 0);
     glVertexArrayAttribBinding(v->vao, 1, 0);
 }
 
-static void bufferIndicesData(struct VertexArray* v, const GLuint* indices,
-                              GLsizei numIndices)
+static void bufferIndicesData(struct VertexArray* v, const GLuint* indices, GLsizei numIndices)
 {
     glCreateBuffers(1, &v->ibo);
-    glNamedBufferStorage(v->ibo, sizeof(GLuint) * numIndices, indices,
-                         GL_DYNAMIC_STORAGE_BIT);
+    glNamedBufferStorage(v->ibo, sizeof(GLuint) * numIndices, indices, GL_DYNAMIC_STORAGE_BIT);
     glVertexArrayElementBuffer(v->vao, v->ibo);
     v->numIndices = numIndices;
 }
 
-struct VertexArray makeVertexArray(const struct Vertex* vertices, const GLuint* indices,
-                                   GLsizei numVerticies, GLsizei numIndices)
+struct VertexArray makeVertexArray(const struct Vertex* vertices, const GLuint* indices, GLsizei numVerticies,
+                                   GLsizei numIndices)
 {
     struct VertexArray v = {0};
     glCreateVertexArrays(1, &v.vao);

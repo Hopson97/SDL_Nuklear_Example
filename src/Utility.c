@@ -110,9 +110,8 @@ SDL_Window* initWindow()
 
     SDL_SetRelativeMouseMode(SDL_TRUE);
 
-    SDL_Window* window = SDL_CreateWindow(
-        "OpenGL Nuklear Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH,
-        HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    SDL_Window* window = SDL_CreateWindow("OpenGL Nuklear Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                          WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 
     SDL_GL_CreateContext(window);
     if (!gladLoadGL()) {
