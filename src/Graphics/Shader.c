@@ -1,28 +1,9 @@
 #include "Shader.h"
 
+#include "../Utility.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-static char* getFileContent(const char* fileName)
-{
-    char* buffer = NULL;
-    long length = 0;
-    FILE* file = fopen(fileName, "r");
-
-    if (file) {
-        fseek(file, 0, SEEK_END);
-        length = ftell(file);
-        fseek(file, 0, SEEK_SET);
-        buffer = malloc(length + 1);
-        if (buffer) {
-            fread(buffer, 1, length, file);
-        }
-        buffer[length + 1] = '\0';
-        fclose(file);
-    }
-    return buffer;
-}
 
 static char* getShaderString(GLenum shaderType)
 {

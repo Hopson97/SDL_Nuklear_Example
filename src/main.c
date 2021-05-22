@@ -1,6 +1,8 @@
 #include "Graphics/GLDebug.h"
 #include "Graphics/Shader.h"
+#include "Graphics/VertexArray.h"
 #include "Maths.h"
+#include "Utility.h"
 #include <SDL2/SDL.h>
 #include <cglm/cam.h>
 #include <cglm/struct.h>
@@ -8,57 +10,16 @@
 #include <glad/glad.h>
 #include <nuklear/nuklear_def.h>
 #include <nuklear/nuklear_sdl_gl3.h>
-#include <stb/stb_image.h>
 #include <stb/stb_perlin.h>
 #include <stdbool.h>
+#include "Graphics/Texture.h"
 
 #define MAX_VERTEX_MEMORY 0x80000
 #define MAX_ELEMENT_MEMORY 0x20000
 
-#define WIDTH 1600
-#define HEIGHT 900
-
 int main(void)
 {
-    //=======================================
-    //          SDL SET UP SECTION
-    //=======================================
-    SDL_Init(SDL_INIT_EVERYTHING);
-
-    // Set up SDL to work with OpenGL (https://wiki.libsdl.org/SDL_GLattr)
-    // Enable hardware acceleration
-    SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-
-    // Set rendering parmeters
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-
-    SDL_SetRelativeMouseMode(SDL_TRUE);
-
-    // Create the window and OpenGL context
-
-    SDL_Window* window = SDL_CreateWindow(
-        "OpenGL Nuklear Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH,
-        HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
-
-    SDL_GLContext context = SDL_GL_CreateContext(window);
-    // Init OpenGL functions
-    if (!gladLoadGL()) {
-        printf("Error: Could not load OpenGL.");
-        SDL_GL_DeleteContext(context);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return -1;
-    }
-    initGLDebug();
+    SDL_Window* window = initWindow();
 
     //=======================================
     //          NUKLEAR SET UP SECTION
@@ -94,13 +55,6 @@ int main(void)
     //          OPENGL OBJECT SETUP
     //=======================================
     // clang-format off
-
-    struct Vertex
-    {
-        vec3 position;
-        vec2 texture;
-    };
-
     struct Vertex vertices[4] = {
 
         {{-0.5f, -0.5f, 0.0f}, {0.0f, 1.0f}},
@@ -108,69 +62,16 @@ int main(void)
         {{ 0.5f,  0.5f, 0.0f}, {1.0f, 0.0f}},
         {{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f}},
     };
-
     const GLuint indices[]  = {
         0, 1, 2, 2, 3, 0
     };
     // clang-format on
+    struct VertexArray quad = MAKE_VERTEX_ARRAY(vertices, indices);
 
-    //
-    //  Create vertex data
-    //
-    GLuint vao = 0;
-    GLuint vbo = 0;
-    GLuint ebo = 0;
-
-    // glGenBuffers, glGenVertexArrays
-    glCreateVertexArrays(1, &vao);
-    glCreateBuffers(1, &vbo);
-    glCreateBuffers(1, &ebo);
-
-    // glBufferData
-    glNamedBufferStorage(vbo, sizeof(struct Vertex) * 4, vertices,
-                         GL_DYNAMIC_STORAGE_BIT);
-    glNamedBufferStorage(ebo, sizeof(GLuint) * 6, indices, GL_DYNAMIC_STORAGE_BIT);
-
-    // Attach the vertex array to the vertex buffer and element buffer
-    glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(struct Vertex));
-    glVertexArrayElementBuffer(vao, ebo);
-
-    // glEnableVertexAttribArray
-    glEnableVertexArrayAttrib(vao, 0);
-    glEnableVertexArrayAttrib(vao, 1);
-
-    // glVertexAttribPointer
-    glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE,
-                              offsetof(struct Vertex, position));
-    glVertexArrayAttribFormat(vao, 1, 2, GL_FLOAT, GL_FALSE,
-                              offsetof(struct Vertex, texture));
-    glVertexArrayAttribBinding(vao, 0, 0);
-    glVertexArrayAttribBinding(vao, 1, 0);
-
-    // Load shaders
     GLuint shader =
         loadShaders("Data/Shaders/MinVertex.glsl", "Data/Shaders/MinFragment.glsl");
+    GLuint texture = loadTexture("Data/Textures/opengl_logo.png");
 
-    //
-    // Load up a texture
-    //
-
-    int width;
-    int height;
-    int channels;
-    unsigned char* imageData = stbi_load("Data/Textures/opengl_logo.png", &width, &height,
-                                         &channels, STBI_rgb_alpha);
-
-    GLuint texture;
-    glCreateTextures(GL_TEXTURE_2D, 1, &texture);
-    glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureStorage2D(texture, 1, GL_RGBA8, width, height);
-    glTextureSubImage2D(texture, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE,
-                        imageData);
-    stbi_image_free(imageData);
 
     //=======================================
     //          OPENGL MISC SETUP
@@ -206,7 +107,6 @@ int main(void)
         modelRotations[i][1] = rand() % 360;
         modelRotations[i][2] = rand() % 360;
     }
-
 
 // Generate some spicy terrain
 #define VERTS 128
@@ -244,7 +144,6 @@ int main(void)
             }
             float height = (value / accumulatedAmps) * 100;
 
-
             struct Vertex vertex;
             vertex.position[0] = vx;
             vertex.position[1] = height - 100;
@@ -280,43 +179,24 @@ int main(void)
         }
     }
 
-    //
-    //  Create vertex data
-    //
-    GLuint terrainvao = 0;
-    GLuint terrainvbo = 0;
-    GLuint terrainebo = 0;
-
-    // glGenBuffers, glGenVertexArrays
-    glCreateVertexArrays(1, &terrainvao);
-    glCreateBuffers(1, &terrainvbo);
-    glCreateBuffers(1, &terrainebo);
-
-    // glBufferData
-    glNamedBufferStorage(terrainvbo, sizeof(struct Vertex) * VERTS * VERTS, terrainVerts, GL_DYNAMIC_STORAGE_BIT);
-    glNamedBufferStorage(terrainebo, sizeof(GLuint) * indicesCount, terrainIndices, GL_DYNAMIC_STORAGE_BIT);
-
-    // Attach the vertex array to the vertex buffer and element buffer
-    glVertexArrayVertexBuffer(terrainvao, 0, terrainvbo, 0, sizeof(struct Vertex));
-    glVertexArrayElementBuffer(terrainvao, terrainebo);
-
-    // glEnableVertexAttribArray
-    glEnableVertexArrayAttrib(terrainvao, 0);
-    glEnableVertexArrayAttrib(terrainvao, 1);
-
-    // glVertexAttribPointer
-    glVertexArrayAttribFormat(terrainvao, 0, 3, GL_FLOAT, GL_FALSE, offsetof(struct Vertex, position));
-    glVertexArrayAttribFormat(terrainvao, 1, 2, GL_FLOAT, GL_FALSE, offsetof(struct Vertex, texture));
-    glVertexArrayAttribBinding(terrainvao, 0, 0);
-    glVertexArrayAttribBinding(terrainvao, 1, 0);
+    struct VertexArray terrain = MAKE_VERTEX_ARRAY(terrainVerts, terrainIndices);
 
     //=======================================
     //          MAIN LOOP
     //=======================================
     const Uint8* keyboard = NULL;
     bool running = true;
+    int start = SDL_GetTicks();
+    int frames = 0;
+    int fps = 0;
     while (running) {
-        SDL_Delay(16); //"hack" for 60fps
+        frames++;
+        int timeNow = SDL_GetTicks();
+        if (timeNow - start >= 1000) {
+            fps = frames;
+            frames = 0;
+            start = timeNow;
+        }
         nk_input_begin(ctx);
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
@@ -376,6 +256,8 @@ int main(void)
             nk_layout_row_dynamic(ctx, 25, 1);
             nk_labelf(ctx, NK_STATIC, "Player Front: (%f %f %f)", front[0], front[1],
                       front[2]);
+            nk_layout_row_dynamic(ctx, 25, 1);
+            nk_labelf(ctx, NK_STATIC, "FPS: %d", fps);
         }
         nk_end(ctx);
 
@@ -404,7 +286,7 @@ int main(void)
         loadMatrix4ToShader(shader, "projectionViewMatrix", projectionViewMatrix);
 
         // Bind stuff then render
-        glBindVertexArray(vao);
+        glBindVertexArray(quad.vao);
         glBindTextureUnit(0, texture);
         for (int i = 0; i < count; i++) {
             Matrix4 modelMatrix = MATRIX4_IDENTITY;
@@ -412,7 +294,7 @@ int main(void)
             loadMatrix4ToShader(shader, "modelMatrix", modelMatrix);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         }
-        glBindVertexArray(terrainvao);
+        glBindVertexArray(terrain.vao);
 
         Matrix4 modelMatrix = MATRIX4_IDENTITY;
         vec3 loc = VECTOR3_ZERO;
@@ -428,21 +310,19 @@ int main(void)
     //=======================================
     //          CLEAN UP
     //=======================================
+    destroyVertexArray(&quad);
+    destroyVertexArray(&terrain);
 
     cs_free_sound(&loaded);
     cs_shutdown_context(audioContext);
 
     // OpenGL
-    glDeleteBuffers(1, &vbo);
-    glDeleteBuffers(1, &ebo);
-    glDeleteVertexArrays(1, &vao);
     glDeleteProgram(shader);
 
     // Nuklear
     nk_sdl_shutdown();
 
     // SDL
-    SDL_GL_DeleteContext(context);
     SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;

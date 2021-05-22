@@ -10,8 +10,11 @@ project(
 add_executable(${PROJECT_NAME}     
     src/main.c
     src/Maths.c
+    src/Utility.c
     src/Graphics/GLDebug.c
     src/Graphics/Shader.c
+    src/Graphics/Texture.c
+    src/Graphics/VertexArray.c
 )
 
 #Set C11
