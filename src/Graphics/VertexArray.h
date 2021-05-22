@@ -27,3 +27,5 @@ struct VertexArray {
 struct VertexArray makeVertexArray(const struct Vertex* vertices, const GLuint* indices,
                                    GLsizei numVerticies, GLsizei numIndices);
 void destroyVertexArray(struct VertexArray* vertexArray);
+
+struct VertexArray genTerrainVertexArray();
