@@ -10,6 +10,7 @@ project(
 add_executable(${PROJECT_NAME}     
     src/main.c
     src/Camera.c
+    src/GUI.c
     src/Maths.c
     src/Utility.c
     src/Graphics/Framebuffer.c

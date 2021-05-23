@@ -1,7 +1,7 @@
 #include "Framebuffer.h"
 
-#include "Texture.h"
 #include "../Utility.h"
+#include "Texture.h"
 #include <stdio.h>
 
 struct Framebuffer createFramebuffer(GLuint width, GLuint height)

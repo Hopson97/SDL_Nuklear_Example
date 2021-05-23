@@ -1,4 +1,5 @@
 #include "Camera.h"
+#include "GUI.h"
 #include "Graphics/Framebuffer.h"
 #include "Graphics/GLDebug.h"
 #include "Graphics/Shader.h"
@@ -11,12 +12,7 @@
 #include <cglm/struct.h>
 #include <cute_headers/cute_sound.h>
 #include <glad/glad.h>
-#include <nuklear/nuklear_def.h>
-#include <nuklear/nuklear_sdl_gl3.h>
 #include <stdbool.h>
-
-#define MAX_VERTEX_MEMORY 0x80000
-#define MAX_ELEMENT_MEMORY 0x20000
 
 int main(void)
 {
@@ -24,20 +20,7 @@ int main(void)
     glClearColor(0.5, 0.5, 0.5, 0.0);
     glViewport(0, 0, WIDTH, HEIGHT);
 
-    //=======================================
-    //          NUKLEAR SET UP SECTION
-    //=======================================
-    struct nk_context* ctx;
-    // set_style(ctx, THEME_WHITE);
-    ctx = nk_sdl_init(window);
-    {
-        struct nk_font_atlas* atlas;
-        nk_sdl_font_stash_begin(&atlas);
-        /*struct nk_font *droid = nk_font_atlas_add_from_file(atlas,
-         * "../../../extra_font/DroidSans.ttf", 14, 0);*/
-        nk_sdl_font_stash_end();
-    }
-    nk_set_style(ctx, THEME_DARK);
+    guiInit(window);
 
     //=======================================
     //          CUTE SOUNDS
@@ -108,21 +91,12 @@ int main(void)
     //=======================================
     const Uint8* keyboard = NULL;
     bool running = true;
-    int start = SDL_GetTicks();
-    int frames = 0;
-    int fps = 0;
+
     while (running) {
-        frames++;
-        int timeNow = SDL_GetTicks();
-        if (timeNow - start >= 1000) {
-            fps = frames;
-            frames = 0;
-            start = timeNow;
-        }
-        nk_input_begin(ctx);
+        guiBeginFrame();
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-            nk_sdl_handle_event(&event);
+            guiProcessEvent(&event);
             switch (event.type) {
                 case SDL_KEYUP:
                     if (event.key.keysym.sym == SDLK_ESCAPE) {
@@ -141,32 +115,16 @@ int main(void)
         }
         keyboard = SDL_GetKeyboardState(NULL);
 
-        //=======================================
-        //              INPUT
-        //=======================================
+        //  Input
         cameraKeyboardInput(&camera, keyboard);
+
         // Update
         Matrix4 projectionViewMatrix = MATRIX4_IDENTITY;
         cameraUpdate(&camera, projectionViewMatrix);
 
-        // GUI
-        if (nk_begin(ctx, "Debug Window", nk_rect(0, 0, 400, 200), 0)) {
-            nk_layout_row_dynamic(ctx, 25, 1);
-            nk_labelf(ctx, NK_STATIC, "Player Position: (%f %f %f)", camera.position[0], camera.position[1],
-                      camera.position[2]);
-            nk_layout_row_dynamic(ctx, 25, 1);
-            nk_labelf(ctx, NK_STATIC, "Player Rotation: (%f %f %f)", camera.rotation[0], camera.rotation[1],
-                      camera.rotation[2]);
-            nk_layout_row_dynamic(ctx, 25, 1);
-            nk_labelf(ctx, NK_STATIC, "Player Front: (%f %f %f)", camera.front[0], camera.front[1], camera.front[2]);
-            nk_layout_row_dynamic(ctx, 25, 1);
-            nk_labelf(ctx, NK_STATIC, "FPS: %d", fps);
-        }
-        nk_end(ctx);
+        guiDebugScreen(&camera);
 
-        //=======================================
-        //          Render
-        //=======================================
+        // Render
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.fbo);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(shader);
@@ -199,8 +157,7 @@ int main(void)
         glBindVertexArray(screen.vao);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
-
+        guiEndFrame();
         SDL_GL_SwapWindow(window);
     }
 
@@ -219,8 +176,7 @@ int main(void)
     glDeleteProgram(frameBufferShader);
 
     // Nuklear
-    nk_sdl_shutdown();
-
+    guiShutdown();
     // SDL
     SDL_DestroyWindow(window);
     SDL_Quit();
