@@ -16,15 +16,13 @@
 
 int main(void)
 {
+    // Init Window + OpenGL
     SDL_Window* window = initWindow();
     glClearColor(0.5, 0.5, 0.5, 0.0);
     glViewport(0, 0, WIDTH, HEIGHT);
-
     guiInit(window);
 
-    //=======================================
-    //          CUTE SOUNDS
-    //=======================================
+    // Init sounds
     cs_loaded_sound_t loaded = cs_load_wav("Data/file_example_WAV_1MG.wav");
     fflush(stdout);
 
@@ -36,9 +34,7 @@ int main(void)
     cs_set_volume(&jump, 0.5, 0.5);
     cs_insert_sound(audioContext, &jump);
 
-    //=======================================
-    //          OPENGL OBJECT SETUP
-    //=======================================
+    // Init OpenGL Objects
     // clang-format off
     struct Vertex vertices[4] = {
 
@@ -60,10 +56,7 @@ int main(void)
 
     struct Framebuffer framebuffer = createFramebuffer(WIDTH, HEIGHT);
 
-    //=======================================
-    //          WOW LETS MAKE IT 3D
-    //=======================================
-
+    // Init scene
     struct Camera camera = createCamera();
 
     float aspect = (float)WIDTH / (float)HEIGHT;
@@ -86,29 +79,24 @@ int main(void)
     }
 
     struct VertexArray terrain = createTerrainVertexArray();
-    //=======================================
-    //          MAIN LOOP
-    //=======================================
+
+    // Init window
     bool running = true;
     while (running) {
         guiBeginFrame();
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             guiProcessEvent(&event);
-            switch (event.type) {
-                case SDL_KEYUP:
-                    if (event.key.keysym.sym == SDLK_ESCAPE) {
-                        running = false;
-                    }
-                    break;
-
-                case SDL_MOUSEMOTION:
-                    cameraMouseInput(&camera, event.motion.xrel, event.motion.yrel);
-                    break;
-
-                case SDL_QUIT:
+            if (event.type == SDL_KEYUP) {
+                if (event.key.keysym.sym == SDLK_ESCAPE) {
                     running = false;
-                    break;
+                }
+            }
+            else if (event.type == SDL_MOUSEMOTION) {
+                cameraMouseInput(&camera, event.motion.xrel, event.motion.yrel);
+            }
+            else if (event.type == SDL_QUIT) {
+                running = false;
             }
         }
 
@@ -124,13 +112,16 @@ int main(void)
         // Render
         glEnable(GL_DEPTH_TEST);
 
+
+        // 1. Bind framebuffer target
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.fbo);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glUseProgram(shader);
 
+        // Use the scene shaders
+        glUseProgram(shader);
         loadMatrix4ToShader(shader, "projectionViewMatrix", projectionViewMatrix);
 
-        // Bind stuff then render
+        // Render the quads
         glBindVertexArray(quad.vao);
         glBindTextureUnit(0, texture);
         for (int i = 0; i < count; i++) {
@@ -139,23 +130,26 @@ int main(void)
             loadMatrix4ToShader(shader, "modelMatrix", modelMatrix);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         }
-        glBindVertexArray(terrain.vao);
 
+        // Render the terrain
+        glBindVertexArray(terrain.vao);
         Matrix4 modelMatrix = MATRIX4_IDENTITY;
         vec3 loc = VECTOR3_ZERO;
         createModelMatrix(loc, loc, modelMatrix);
         loadMatrix4ToShader(shader, "modelMatrix", modelMatrix);
         glDrawElements(GL_TRIANGLES, terrain.numIndices, GL_UNSIGNED_INT, 0);
 
-        // Final render pass
+        // 2. Unbind framebuffers, render to the window
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(frameBufferShader);
         glBindTextureUnit(0, framebuffer.colourAttachment);
 
+        // Render to window
         glBindVertexArray(screen.vao);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
+        // End frame
         guiEndFrame();
         SDL_GL_SwapWindow(window);
     }
