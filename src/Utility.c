@@ -14,11 +14,10 @@ char* getFileContent(const char* fileName)
         fseek(file, 0, SEEK_END);
         length = ftell(file);
         fseek(file, 0, SEEK_SET);
-        buffer = malloc(length + 1);
+        buffer = calloc(length + 1, 1);
         if (buffer) {
             fread(buffer, 1, length, file);
         }
-        buffer[length + 1] = '\0';
         fclose(file);
     }
     return buffer;

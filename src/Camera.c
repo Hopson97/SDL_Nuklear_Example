@@ -16,8 +16,9 @@ struct Camera createCamera()
     return camera;
 }
 
-void cameraKeyboardInput(struct Camera* camera, const uint8_t* keyboard)
+void cameraKeyboardInput(struct Camera* camera)
 {
+    const uint8_t* keyboard = SDL_GetKeyboardState(NULL);
     // Keyboard input
     // https://wiki.libsdl.org/SDL_Scancode
     if (keyboard[SDL_SCANCODE_W]) {

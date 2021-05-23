@@ -13,6 +13,6 @@ struct Camera {
 };
 
 struct Camera createCamera();
-void cameraKeyboardInput(struct Camera* camera, const uint8_t* keyboard);
+void cameraKeyboardInput(struct Camera* camera);
 void cameraMouseInput(struct Camera* camera, uint32_t xrel, uint32_t yrel);
 void cameraUpdate(struct Camera* camera, Matrix4 projectionViewMatrix);

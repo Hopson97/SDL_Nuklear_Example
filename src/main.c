@@ -89,9 +89,7 @@ int main(void)
     //=======================================
     //          MAIN LOOP
     //=======================================
-    const Uint8* keyboard = NULL;
     bool running = true;
-
     while (running) {
         guiBeginFrame();
         SDL_Event event;
@@ -113,10 +111,9 @@ int main(void)
                     break;
             }
         }
-        keyboard = SDL_GetKeyboardState(NULL);
 
         //  Input
-        cameraKeyboardInput(&camera, keyboard);
+        cameraKeyboardInput(&camera);
 
         // Update
         Matrix4 projectionViewMatrix = MATRIX4_IDENTITY;
@@ -125,7 +122,7 @@ int main(void)
         guiDebugScreen(&camera);
 
         // Render
-    glEnable(GL_DEPTH_TEST);
+        glEnable(GL_DEPTH_TEST);
 
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.fbo);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
