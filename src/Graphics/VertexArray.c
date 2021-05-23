@@ -30,8 +30,8 @@ static void bufferIndicesData(struct VertexArray* v, const GLuint* indices, GLsi
     v->numIndices = numIndices;
 }
 
-struct VertexArray makeVertexArray(const struct Vertex* vertices, const GLuint* indices, GLsizei numVerticies,
-                                   GLsizei numIndices)
+struct VertexArray createVertexArray(const struct Vertex* vertices, const GLuint* indices, GLsizei numVerticies,
+                                     GLsizei numIndices)
 {
     struct VertexArray v = {0};
     glCreateVertexArrays(1, &v.vao);
@@ -40,15 +40,14 @@ struct VertexArray makeVertexArray(const struct Vertex* vertices, const GLuint* 
     return v;
 }
 
-void destroyVertexArray(struct VertexArray* v)
+struct VertexArray createEmptyVertexArray()
 {
-    glDeleteBuffers(1, &v->ibo);
-    glDeleteBuffers(1, &v->vbo);
-    glDeleteVertexArrays(1, &v->vao);
-    v->numIndices = 0;
+    struct VertexArray v = {0};
+    glCreateVertexArrays(1, &v.vao);
+    return v;
 }
 
-struct VertexArray genTerrainVertexArray()
+struct VertexArray createTerrainVertexArray()
 {
     // Generate some spicy terrain
 #define VERTS 128
@@ -121,5 +120,13 @@ struct VertexArray genTerrainVertexArray()
         }
     }
 
-    return MAKE_VERTEX_ARRAY(terrainVerts, terrainIndices);
+    return CREATE_VERTEX_ARRAY(terrainVerts, terrainIndices);
+}
+
+void destroyVertexArray(struct VertexArray* v)
+{
+    glDeleteBuffers(1, &v->ibo);
+    glDeleteBuffers(1, &v->vbo);
+    glDeleteVertexArrays(1, &v->vao);
+    v->numIndices = 0;
 }

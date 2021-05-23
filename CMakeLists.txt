@@ -12,6 +12,7 @@ add_executable(${PROJECT_NAME}
     src/Camera.c
     src/Maths.c
     src/Utility.c
+    src/Graphics/Framebuffer.c
     src/Graphics/GLDebug.c
     src/Graphics/Shader.c
     src/Graphics/Texture.c

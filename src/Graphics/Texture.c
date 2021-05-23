@@ -26,3 +26,14 @@ GLuint loadTexture(const char* file)
 
     return texture;
 }
+
+GLuint createFramebufferTexture(GLint width, GLint height)
+{
+    GLuint tex = 0;
+    glCreateTextures(GL_TEXTURE_2D, 1, &tex);
+    glTextureStorage2D(tex, 1, GL_RGB8, width, height);
+    glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    return tex;
+}

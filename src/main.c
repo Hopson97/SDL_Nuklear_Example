@@ -1,4 +1,5 @@
 #include "Camera.h"
+#include "Graphics/Framebuffer.h"
 #include "Graphics/GLDebug.h"
 #include "Graphics/Shader.h"
 #include "Graphics/Texture.h"
@@ -67,10 +68,14 @@ int main(void)
         0, 1, 2, 2, 3, 0
     };
     // clang-format on
-    struct VertexArray quad = MAKE_VERTEX_ARRAY(vertices, indices);
+    struct VertexArray quad = CREATE_VERTEX_ARRAY(vertices, indices);
+    struct VertexArray screen = createEmptyVertexArray();
 
     GLuint shader = loadShaders("MinVertex.glsl", "MinFragment.glsl");
+    GLuint frameBufferShader = loadShaders("FramebufferVertex.glsl", "FramebufferFragment.glsl");
     GLuint texture = loadTexture("opengl_logo.png");
+
+    struct Framebuffer framebuffer = createFramebuffer(WIDTH, HEIGHT);
 
     //=======================================
     //          WOW LETS MAKE IT 3D
@@ -97,7 +102,7 @@ int main(void)
         modelRotations[i][2] = rand() % 360;
     }
 
-    struct VertexArray terrain = genTerrainVertexArray();
+    struct VertexArray terrain = createTerrainVertexArray();
     //=======================================
     //          MAIN LOOP
     //=======================================
@@ -162,9 +167,10 @@ int main(void)
         //=======================================
         //          Render
         //=======================================
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.fbo);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         glUseProgram(shader);
+
         loadMatrix4ToShader(shader, "projectionViewMatrix", projectionViewMatrix);
 
         // Bind stuff then render
@@ -184,6 +190,15 @@ int main(void)
         loadMatrix4ToShader(shader, "modelMatrix", modelMatrix);
         glDrawElements(GL_TRIANGLES, terrain.numIndices, GL_UNSIGNED_INT, 0);
 
+        // Final render pass
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glUseProgram(frameBufferShader);
+        glBindTextureUnit(0, framebuffer.colourAttachment);
+
+        glBindVertexArray(screen.vao);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
         nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
 
         SDL_GL_SwapWindow(window);
@@ -194,12 +209,14 @@ int main(void)
     //=======================================
     destroyVertexArray(&quad);
     destroyVertexArray(&terrain);
+    destroyVertexArray(&screen);
 
     cs_free_sound(&loaded);
     cs_shutdown_context(audioContext);
 
     // OpenGL
     glDeleteProgram(shader);
+    glDeleteProgram(frameBufferShader);
 
     // Nuklear
     nk_sdl_shutdown();
