@@ -1,17 +1,10 @@
 #include "Camera.h"
 #include "GUI.h"
-#include "Graphics/Framebuffer.h"
-#include "Graphics/GLDebug.h"
-#include "Graphics/Shader.h"
-#include "Graphics/Texture.h"
-#include "Graphics/VertexArray.h"
+#include "Graphics/GLWrappers.h"
 #include "Maths.h"
 #include "Utility.h"
 #include <SDL2/SDL.h>
-#include <cglm/cam.h>
-#include <cglm/struct.h>
 #include <cute_headers/cute_sound.h>
-#include <glad/glad.h>
 #include <stdbool.h>
 
 int main(void)
@@ -107,11 +100,9 @@ int main(void)
         Matrix4 projectionViewMatrix = MATRIX4_IDENTITY;
         cameraUpdate(&camera, projectionViewMatrix);
 
-        guiDebugScreen(&camera);
-
         // Render
+        guiDebugScreen(&camera);
         glEnable(GL_DEPTH_TEST);
-
 
         // 1. Bind framebuffer target
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.fbo);
